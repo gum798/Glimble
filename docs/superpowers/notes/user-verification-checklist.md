@@ -5,19 +5,20 @@ the SwiftPM package, the tested pure geometry (`swift test` → 12 passing), the
 (touch capture + AX window snapping, compiles clean), and the signing/notarization scripts
 (structurally verified with an ad-hoc dry-run).
 
-What remains **requires your hardware + Apple Developer account** and can only be done by you.
-Run these on a Mac with a built-in trackpad, signed in to the Apple Developer Program.
-Full detail for each step lives in `docs/superpowers/plans/2026-06-15-glimble-phase0-risk-burndown.md`.
+**Distribution decision (2026-06-15):** v1 ships **no-account ad-hoc signing + GitHub releases +
+your own Homebrew tap** — see spec §8. So **no Apple Developer account is needed** for the
+Phase 0 gate. The whole gate (A–E) is now doable on this MacBook (Apple Silicon, macOS 26).
+Full detail: `docs/superpowers/plans/2026-06-15-glimble-phase0-risk-burndown.md`.
 
-## Prerequisites (one-time)
-- [ ] Apple Developer Program membership.
-- [ ] A **Developer ID Application** identity in your keychain — check: `security find-identity -v -p codesigning` (the build session found **0**, so this is currently missing).
-- [ ] A notary credential profile: `xcrun notarytool store-credentials glimble-notary --apple-id <id> --team-id <TEAMID> --password <app-specific-pw>`
+## Prerequisites
+- [ ] A Mac with a **built-in trackpad** (this one qualifies). Nothing else — no paid account.
+- [ ] (Only if you later upgrade to notarization) Apple Developer Program + a Developer ID
+      identity (`security find-identity -v -p codesigning`) + a `notarytool` profile.
 
 ## A. Live touch capture (Plan Task 5 / Task 10)
 > Note: TCC grants are keyed to the running binary's code-signing identity. A grant given to
-> the `swift run` dev binary does **not** carry over to the signed `.app` — the bundle will
-> prompt again in section C/D. That re-prompt is expected, not a bug. `swift run` is fine for
+> the `swift run` dev binary does **not** carry over to the ad-hoc `.app` (section C) — the
+> bundle will prompt again. That re-prompt is expected, not a bug. `swift run` is fine for
 > proving capture works; the bundle is what you ship.
 - [ ] `swift run GlimbleSpike` (a `👆 –` item appears in the menu bar).
 - [ ] Grant **Input Monitoring** when prompted (System Settings ▸ Privacy & Security ▸ Input Monitoring), then relaunch.
@@ -29,20 +30,25 @@ Full detail for each step lives in `docs/superpowers/plans/2026-06-15-glimble-ph
 - [ ] Focus **TextEdit** → menu **Snap Left** fills the left half under the menu bar; **Maximize** fills the visible frame.
 - [ ] Focus **Google Chrome** → **Snap Right** snaps cleanly (this exercises the `AXEnhancedUserInterface` workaround).
 
-## C. Sign + notarize (Plan Tasks 7–8)
-- [ ] `GLIMBLE_IDENTITY="Developer ID Application: <NAME> (<TEAMID>)" ./scripts/build-app.sh` → ends with `Signed Glimble Spike.app`.
-- [ ] `codesign -dvvv "Glimble Spike.app" 2>&1 | grep -E "Authority|flags"` → `Authority=Developer ID Application: …`, `flags=…runtime…`.
-- [ ] `./scripts/notarize.sh` → `notarytool` prints **`status: Accepted`**; `stapler validate` → worked; `spctl -a -t exec -vv` → `source=Notarized Developer ID`, `accepted`.
-- [ ] **If REJECTED:** `xcrun notarytool log <id> --keychain-profile glimble-notary` → paste JSON into the notes. **This is a project gate failure — stop and reassess before Phase 1.**
+## C. Ad-hoc bundle + Gatekeeper-bypass launch (no account)
+This proves the real distribution path: an ad-hoc `.app` that a user downloads, un-quarantines once, and runs.
+- [ ] `GLIMBLE_IDENTITY="-" ./scripts/build-app.sh` → ends with `Signed Glimble Spike.app` (ad-hoc).
+- [ ] `codesign -dvvv "Glimble Spike.app" 2>&1 | grep -E "Signature|flags"` → `Signature=adhoc`, `flags=…runtime…`.
+- [ ] Simulate a download (apply quarantine, then do the user's one-time bypass):
+      `xattr -w com.apple.quarantine "0081;0;Safari;" "Glimble Spike.app"` then
+      `open "Glimble Spike.app"` → confirm macOS blocks it (Gatekeeper). Then remove it the way a
+      user would: `xattr -dr com.apple.quarantine "Glimble Spike.app"` and `open` again → it launches,
+      menu-bar item appears, finger counts + snapping work after granting the two permissions to the bundle.
+- [ ] (Optional, real end-to-end) zip it (`ditto -c -k --keepParent "Glimble Spike.app" Glimble.zip`),
+      upload to a GitHub release, download on another Mac, and confirm the "Open Anyway" flow in
+      System Settings ▸ Privacy & Security works.
 
-## D. Clean-machine Gatekeeper launch (Plan Task 9)
-- [ ] Copy the stapled `Glimble Spike.app` to a clean macOS 26 machine that never built it; double-click.
-- [ ] It launches with no "unverified developer" block and the menu-bar item appears. `spctl -a -t exec -vv "…/Glimble Spike.app"` → `accepted`, `Notarized Developer ID`.
-
-## E. Record the gate decision (Plan Task 11)
-- [ ] Fill `docs/superpowers/notes/phase0-gate.md` with PASS/FAIL per bet (notarization, capture matrix, AX snap, clean launch) and a GO / NO-GO for Phase 1.
+## D. Record the gate decision (Plan Task 11)
+- [ ] Fill `docs/superpowers/notes/phase0-gate.md` with PASS/FAIL per bet — **capture matrix (A)** and
+      **AX snap (B)** are the v1-blocking bets; ad-hoc launch (C) confirms the distribution path.
+      Notarization is **not** a v1 bet (deferred with the no-account decision). Then a GO / NO-GO for Phase 1.
 
 ---
 When the gate is **GO**, ping me and we move to the Phase 1 plan (full gesture engine, RuleStore,
-ActionExecutor, onboarding, Xcode-project migration, Sparkle). If anything is **NO-GO**, tell me
-what failed and we adapt the design before building further.
+ActionExecutor, onboarding, the Homebrew tap + release packaging, Sparkle). If anything is **NO-GO**,
+tell me what failed and we adapt the design before building further.

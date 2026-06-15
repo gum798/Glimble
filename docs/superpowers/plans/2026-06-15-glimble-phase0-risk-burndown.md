@@ -6,7 +6,14 @@
 
 **Architecture:** A single SwiftPM package at the repo root with three targets: a pure, OS-import-free `GlimbleCore` library (window geometry math, TDD-tested via Swift Testing); a `GlimbleSpike` AppKit executable (menu-bar agent, `.accessory` activation policy / `LSUIElement`) that links `OpenMultitouchSupport` and drives live touch capture + AX window snapping; and a `GlimbleCoreTests` test target. CLI build scripts assemble the executable into a `.app` bundle, sign it with Developer ID + Hardened Runtime + the `disable-library-validation` entitlement, notarize via `notarytool`, and staple.
 
-**Tech Stack:** Swift 6.x (swift-tools 6.0+), Swift Testing, AppKit, ApplicationServices (Accessibility/AXUIElement), CoreGraphics, `Kyome22/OpenMultitouchSupport` (SwiftPM, MIT), `xcrun notarytool`/`stapler`/`codesign`.
+**Tech Stack:** Swift 6.x (swift-tools 6.0+), Swift Testing, AppKit, ApplicationServices (Accessibility/AXUIElement), CoreGraphics, `Kyome22/OpenMultitouchSupport` (SwiftPM, MIT), `codesign` (ad-hoc), and `xcrun notarytool`/`stapler` (only on the optional notarization upgrade).
+
+> **Distribution decision (2026-06-15) — affects Tasks 8–9:** v1 ships **no-account ad-hoc signing +
+> GitHub releases + your own Homebrew tap** (spec §8). So the gate's **v1-blocking bets are Task 5/10
+> (capture) and Task 6 (AX snap)** — both account-free and doable on the dev MacBook. **Tasks 8 (notarize)
+> and 9 (clean-machine Gatekeeper) are deferred/optional** — run them only if/when you upgrade to a paid
+> Developer ID. The account-free analog (build ad-hoc, simulate quarantine, confirm the one-time
+> "Open Anyway" launch) is in `docs/superpowers/notes/user-verification-checklist.md` section C.
 
 ---
 

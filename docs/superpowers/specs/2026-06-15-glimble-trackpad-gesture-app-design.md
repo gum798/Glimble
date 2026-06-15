@@ -2,7 +2,7 @@
 
 - **작성일**: 2026-06-15
 - **상태**: 승인됨 (구현 계획 작성 전 검토 단계)
-- **한 줄 요약**: 내장 트랙패드 제스처를 임의의 동작(단축키·스크립트·앱 실행·창 관리)에 매핑하는, Developer ID 서명·공증된 비샌드박스 macOS 메뉴바 앱. "BetterTouchTool만큼 강력하지만 더 심플하게."
+- **한 줄 요약**: 내장 트랙패드 제스처를 임의의 동작(단축키·스크립트·앱 실행·창 관리)에 매핑하는 비샌드박스 macOS 메뉴바 앱. v1은 무계정 ad-hoc 서명으로 GitHub + 본인 Homebrew 탭 배포(추후 Developer ID 공증 업그레이드 가능). "BetterTouchTool만큼 강력하지만 더 심플하게."
 
 이 문서는 검증된 기술 리서치(6개 facet, 적대적 검증, 전부 high 신뢰도)를 토대로 한다.
 
@@ -15,7 +15,7 @@
 - **동작(액션)**: 키보드 단축키, 셸 스크립트 / AppleScript / 단축어(Shortcuts), 앱 실행, 창 스냅·이동·리사이즈
 - **UX**: 직관적 설정 UI, 즉시 쓸 수 있는 기본 프리셋, 라이브 제스처 레코더/미리보기, 권한별 온보딩
 - **성능**: 메뉴바에 조용히 상주, 낮은 CPU·메모리
-- **배포**: Developer ID 서명 + 공증(notarization), 직접 배포(.dmg/GitHub), 자동 업데이트(Sparkle)
+- **배포**: 무계정 ad-hoc 서명 + GitHub 릴리스 + 본인 Homebrew 탭(`gum798/homebrew-glimble`); 사용자는 1회 Gatekeeper "그래도 열기" 필요. 추후 Developer ID 공증으로 업그레이드 가능. 자동 업데이트(Sparkle). (§8 참조)
 - **입력 기기**: MacBook **내장 트랙패드만**
 - **타깃 OS**: 최소 macOS 15(Sequoia), macOS 26(Tahoe) 검증
 
@@ -188,7 +188,15 @@ OpenMultitouchSupport.touchDataStream
 
 ## 8. 배포 & 패키징
 
-- **빌드 단위**: Xcode `.app` 타깃(Archive → Distribute App → Developer ID 파이프라인이 Sparkle XPC 헬퍼 서명을 올바른 순서로 처리).
+> **배포 전략 결정 (2026-06-15 개정):** v1은 **무계정 ad-hoc 서명 + GitHub 릴리스 + 본인 Homebrew 탭**(`gum798/homebrew-glimble`)으로 배포한다. Apple Developer Program($99/년) 없이 출시하기 위함. 함의:
+> - **ad-hoc 서명 필수**(Apple Silicon은 미서명 실행 불가) — `build-app.sh`가 `GLIMBLE_IDENTITY="-"`로 지원, 하드닝 런타임 + `disable-library-validation`은 그대로 적용.
+> - **Gatekeeper 마찰**: 비공증이라 다운로드 시 격리됨. macOS 15+는 우클릭 우회를 없앴으므로 사용자가 **1회** "시스템 설정 ▸ 개인정보 보호 및 보안 ▸ 그래도 열기"(또는 `xattr -dr com.apple.quarantine`) 필요. 설치 안내에 명시.
+> - **공식 Homebrew cask 불가**: Homebrew 5.0.0이 공식 cask에 공증을 요구(2026-09까지 비공증 제거). 따라서 **본인 탭**으로만 배포(`brew tap` 후 설치).
+> - **TCC 재부여**: ad-hoc는 릴리스마다 cdhash가 바뀌어 업데이트 시 입력 모니터링·손쉬운 사용 권한을 **재부여**해야 함. 권한 의존이 큰 앱이라 실질 단점 → 릴리스 노트에 안내하고, 사용자 증가 시 Developer ID 공증으로 업그레이드 고려(되돌릴 수 없는 길 아님; 빌드 동일, 서명 식별자 + 공증 단계만 추가).
+>
+> 아래 항목들은 **공증으로 업그레이드할 경우의** 경로를 함께 기록한 것이며, v1 기본값은 위 ad-hoc 경로다.
+
+- **빌드 단위**: v1 ad-hoc 경로는 SwiftPM 실행 타깃 + `build-app.sh` 번들 조립으로 충분(Phase 0에서 검증). 공증 업그레이드 시 Xcode `.app` 타깃(Archive → Distribute App → Developer ID 파이프라인이 Sparkle XPC 헬퍼 서명을 올바른 순서로 처리).
 - **서명/공증**: Developer ID Application 서명 → `xcrun notarytool submit --wait`(App Store Connect API key) → `xcrun stapler staple` → `spctl -a -t exec -vv` 검증.
 - **엔타이틀먼트/런타임**: 하드닝 런타임 **ON** + `com.apple.security.cs.disable-library-validation = true`(다른 Team ID 서명 프레임워크 로드 허용, 프로비저닝 불필요, 공증 무방해) **단 1개**. App Sandbox **OFF**(비공개 프레임워크·전역 입력·AX 제어·셸 실행과 양립 불가, 필수).
 - **메뉴바 에이전트**: `LSUIElement = YES`.
@@ -252,7 +260,7 @@ OpenMultitouchSupport.touchDataStream
 ## 13. 주요 리스크
 
 1. **비공개·미문서 프레임워크 의존(실존적)**: Apple이 `MTTouch` 구조체·심볼·접근을 포인트 릴리스에서 바꿀 수 있음(10.13.2 베타에서 비활성→복원 전례). → TouchSource 격리, dlopen graceful, 버전 게이트 파싱, CI 스모크.
-2. **공증 호환성은 추론(명시적 Apple 보증 아님)**: 강한 실존 증거(BTT/Karabiner/Multitouch)는 있으나 Quinn의 "현재로서는 품질 검사 안 함"은 시간적 단서 → Phase 0에서 실증.
+2. **공증은 v1 비목표(연기)**: v1은 무계정 ad-hoc 경로라 공증 호환성 리스크가 임계 경로에서 빠졌다. 대신 **ad-hoc 특유의 리스크**가 들어옴 — Gatekeeper 1회 우회 마찰, 업데이트마다 TCC 권한 재부여(cdhash 변경). 추후 Developer ID로 업그레이드하면 공증이 비공개 프레임워크를 통과하는지 그때 실증 필요(BTT/Karabiner/Multitouch 정황 증거는 강함).
 3. **macOS 26 신규 타깃**: Rectangle류 스냅/리사이즈 회귀 보고, 26에서 원시 터치 읽기 1차 확인 부재 → 양 OS 실기 검증.
 4. **TCC 마찰·무효화**: 수동 권한 2종, 재서명 시 리셋, 데몬 프롬프트 실패 → 안정 식별자 + 권한별 온보딩 + 복구 플로우.
 5. **시스템 3/4손가락 제스처 억제 불가**: 사용자에게 끄기 안내 의존(마찰·지원 부담) → 비충돌 기본값.
