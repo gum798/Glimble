@@ -33,4 +33,12 @@ public enum WindowGeometry {
             return CGRect(x: vf.midX - w / 2, y: vf.midY - h / 2, width: w, height: h)
         }
     }
+
+    /// Convert an AppKit rect (bottom-left origin) to the top-left-origin global
+    /// Quartz point used by `kAXPositionAttribute`.
+    /// `primaryHeight` is the height of the display whose AppKit frame origin is (0,0).
+    /// Y is negative for displays stacked above the primary — that is correct.
+    public static func axOrigin(forAppKitRect rect: CGRect, primaryHeight: CGFloat) -> CGPoint {
+        CGPoint(x: rect.origin.x, y: primaryHeight - rect.origin.y - rect.size.height)
+    }
 }
