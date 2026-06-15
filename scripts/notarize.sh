@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Notarize and staple the signed Glimble Spike.app. Requires a real Developer ID
+# Notarize and staple the signed Glimble.app. Requires a real Developer ID
 # signature (run build-app.sh with a real GLIMBLE_IDENTITY first) and a stored
 # notarytool credential profile:
 #
@@ -11,8 +11,8 @@
 # Usage:  ./scripts/notarize.sh
 set -euo pipefail
 
-APP="Glimble Spike.app"
-ZIP="GlimbleSpike.zip"
+APP="Glimble.app"
+ZIP="Glimble.zip"
 PROFILE="${GLIMBLE_NOTARY_PROFILE:-glimble-notary}"
 
 ditto -c -k --keepParent "${APP}" "${ZIP}"
