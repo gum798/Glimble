@@ -15,6 +15,10 @@ Full detail for each step lives in `docs/superpowers/plans/2026-06-15-glimble-ph
 - [ ] A notary credential profile: `xcrun notarytool store-credentials glimble-notary --apple-id <id> --team-id <TEAMID> --password <app-specific-pw>`
 
 ## A. Live touch capture (Plan Task 5 / Task 10)
+> Note: TCC grants are keyed to the running binary's code-signing identity. A grant given to
+> the `swift run` dev binary does **not** carry over to the signed `.app` — the bundle will
+> prompt again in section C/D. That re-prompt is expected, not a bug. `swift run` is fine for
+> proving capture works; the bundle is what you ship.
 - [ ] `swift run GlimbleSpike` (a `👆 –` item appears in the menu bar).
 - [ ] Grant **Input Monitoring** when prompted (System Settings ▸ Privacy & Security ▸ Input Monitoring), then relaunch.
 - [ ] Rest 2/3/4 fingers on the trackpad → the menu-bar count shows `👆 2` / `👆 3` / `👆 4`; lifting shows `👆 0`.
