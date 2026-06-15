@@ -715,37 +715,69 @@ Exactly one relaxation, per the spec. `Glimble.entitlements`:
 
 ```bash
 #!/bin/bash
+#
+# Assemble the GlimbleSpike SwiftPM executable into a signed .app bundle.
+#
+# Usage:
+#   GLIMBLE_IDENTITY="Developer ID Application: NAME (TEAMID)" ./scripts/build-app.sh
+#   GLIMBLE_IDENTITY="-" ./scripts/build-app.sh        # ad-hoc local dry-run (no notarization)
+#
+# OpenMultitouchSupport 4.0.0 ships as a prebuilt dynamic XCFramework that the executable
+# links via @rpath (verified: `otool -L` shows @rpath/OpenMultitouchSupportXCF.framework).
+# So we embed it under Contents/Frameworks, add the loader rpath, and RE-SIGN it (it arrives
+# signed by the upstream author).
 set -euo pipefail
 
-IDENTITY="${GLIMBLE_IDENTITY:?Set GLIMBLE_IDENTITY to your 'Developer ID Application: NAME (TEAMID)' string}"
+IDENTITY="${GLIMBLE_IDENTITY:?Set GLIMBLE_IDENTITY to your 'Developer ID Application: NAME (TEAMID)' string (or '-' for an ad-hoc local test)}"
 CONFIG=release
 APP="Glimble Spike.app"
-BIN=".build/${CONFIG}/GlimbleSpike"
+BUILD_DIR=".build/${CONFIG}"
+BIN="${BUILD_DIR}/GlimbleSpike"
+FRAMEWORK="OpenMultitouchSupportXCF.framework"
+
+# Production signing wants a secure timestamp; ad-hoc ('-') cannot get one.
+TIMESTAMP="--timestamp"
+if [ "${IDENTITY}" = "-" ]; then
+    TIMESTAMP=""
+    echo "NOTE: ad-hoc signing — structural dry-run only, NOT notarizable."
+fi
 
 swift build -c "${CONFIG}" --product GlimbleSpike
 
+# --- assemble bundle ---
 rm -rf "${APP}"
-mkdir -p "${APP}/Contents/MacOS" "${APP}/Contents/Resources"
+mkdir -p "${APP}/Contents/MacOS" "${APP}/Contents/Frameworks" "${APP}/Contents/Resources"
 cp "${BIN}" "${APP}/Contents/MacOS/GlimbleSpike"
 cp Sources/GlimbleSpike/Info.plist "${APP}/Contents/Info.plist"
 
-# If OpenMultitouchSupport linked an embedded framework/dylib (binaryTarget case from
-# Task 4 Step 1), sign those FIRST, inside-out. No-op when nothing matches.
-if [ -d "${APP}/Contents/Frameworks" ]; then
-  find "${APP}/Contents/Frameworks" -type f \( -name "*.dylib" -o -name "*" -path "*.framework/*" \) -print0 \
-    | while IFS= read -r -d '' f; do
-        codesign --force --options runtime --timestamp --sign "${IDENTITY}" "${f}"
-      done
-fi
+# Embed the dynamic framework and drop dev-only headers/modules from the shipped copy.
+cp -R "${BUILD_DIR}/${FRAMEWORK}" "${APP}/Contents/Frameworks/${FRAMEWORK}"
+rm -rf "${APP}/Contents/Frameworks/${FRAMEWORK}/Versions/A/Headers" \
+       "${APP}/Contents/Frameworks/${FRAMEWORK}/Versions/A/Modules" \
+       "${APP}/Contents/Frameworks/${FRAMEWORK}/Headers" \
+       "${APP}/Contents/Frameworks/${FRAMEWORK}/Modules"
 
-# Sign the app LAST, with Hardened Runtime + entitlements. Never use --deep.
-codesign --force --options runtime --timestamp \
-  --entitlements Glimble.entitlements \
-  --sign "${IDENTITY}" "${APP}"
+# Point the executable at the bundled Frameworks dir (SwiftPM doesn't add this rpath).
+install_name_tool -add_rpath "@executable_path/../Frameworks" "${APP}/Contents/MacOS/GlimbleSpike"
+
+# --- sign inside-out: framework FIRST, app LAST, never --deep ---
+codesign --force --options runtime ${TIMESTAMP} \
+    --sign "${IDENTITY}" \
+    "${APP}/Contents/Frameworks/${FRAMEWORK}"
+
+codesign --force --options runtime ${TIMESTAMP} \
+    --entitlements Glimble.entitlements \
+    --sign "${IDENTITY}" \
+    "${APP}"
 
 codesign --verify --strict --verbose=2 "${APP}"
 echo "Signed ${APP}"
 ```
+
+> Verified in the build session via an ad-hoc dry-run (`GLIMBLE_IDENTITY="-"`): the bundle
+> assembles, the framework re-signs (replacing the upstream signature), the
+> `@executable_path/../Frameworks` rpath is added, and `codesign --verify --strict` passes.
+> Only the real Developer ID sign (`--timestamp`) and notarization need your identity.
 
 - [ ] **Step 3: Run the build/sign script**
 
