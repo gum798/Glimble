@@ -460,6 +460,9 @@ import OpenMultitouchSupport
 
 /// Isolates ALL private-framework access (via OpenMultitouchSupport) behind one type,
 /// emitting only an active-finger count. This is the seed of the Phase 1 `TouchSource` module.
+/// Main-actor isolated: the only consumer is the menu-bar UI, and the inherited Task then
+/// delivers counts on the main actor with no hop (required by Swift 6 strict concurrency).
+@MainActor
 final class TouchReader {
     private let manager = OMSManager.shared
     private var task: Task<Void, Never>?
@@ -473,7 +476,7 @@ final class TouchReader {
             guard let self else { return }
             for await touches in self.manager.touchDataStream {
                 let active = touches.filter { $0.state == .touching }.count
-                await MainActor.run { self.onCount?(active) }
+                self.onCount?(active)   // already on the main actor (inherited)
             }
         }
     }
@@ -494,6 +497,7 @@ Replace `Sources/GlimbleSpike/AppDelegate.swift` with:
 import AppKit
 import CoreGraphics
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private let touchReader = TouchReader()
@@ -570,6 +574,8 @@ enum WindowSnapError: Error {
 
 /// Snaps the frontmost app's focused window using only the public Accessibility API.
 /// Seed of the Phase 1 window-management half of `ActionExecutor`.
+/// Main-actor isolated because it reads `NSWorkspace`/`NSScreen` (both `@MainActor`).
+@MainActor
 enum WindowSnapper {
 
     static func snapFocusedWindow(to position: SnapPosition) throws {
@@ -645,7 +651,9 @@ In `Sources/GlimbleSpike/AppDelegate.swift`, add `import ApplicationServices` at
         menu.addItem(.separator())
 
         // Accessibility (kTCCServiceAccessibility): needed to set window position/size.
-        let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+        // kAXTrustedCheckOptionPrompt == "AXTrustedCheckOptionPrompt"; the string literal
+        // avoids referencing the non-concurrency-safe global CFString under Swift 6.
+        let opts = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(opts)
 ```
 
