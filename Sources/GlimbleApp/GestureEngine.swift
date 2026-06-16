@@ -16,17 +16,20 @@ final class GestureEngine {
     private var combiner = TapCombiner()
     private var flushTask: Task<Void, Never>?
     private let rules: RulesModel
+    private let settings: AppSettings
 
     /// Returns `true` if the gesture was consumed for recording (so no action should run).
     var recordingSink: ((RecognizedGesture) -> Bool)?
     /// Whether the editor is currently waiting to record a gesture.
     var isRecordingActive: (() -> Bool)?
 
-    init(rules: RulesModel) {
+    init(rules: RulesModel, settings: AppSettings) {
         self.rules = rules
+        self.settings = settings
     }
 
     func handle(_ frame: TouchFrame) {
+        combiner.doubleTapWindow = settings.doubleTapWindow
         guard let raw = recognizer.process(frame) else { return }
         let delivered = combiner.input(raw, now: Self.now()) { [weak self] fingers in
             self?.shouldCombineTaps(fingers: fingers) ?? false

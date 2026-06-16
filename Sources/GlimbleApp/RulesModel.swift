@@ -38,6 +38,12 @@ final class RulesModel: ObservableObject {
     func remove(id: UUID)           { mutate { $0.removing(id: id) } }
     func toggle(id: UUID)           { mutate { $0.togglingEnabled(id: id) } }
 
+    /// Replace all rules with the curated defaults.
+    func resetToDefaults() { mutate { _ in DefaultPresets.ruleSet } }
+
+    /// Replace the whole rule set (e.g. imported from a file).
+    func replace(with newSet: RuleSet) { mutate { _ in newSet } }
+
     private func mutate(_ transform: (RuleSet) -> RuleSet) {
         ruleSet = transform(ruleSet)
         persist()

@@ -9,9 +9,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let touchSource = TouchSource()
     private let rules = RulesModel()
     private let recorder = Recorder()
+    private let settings = AppSettings()
     private let permissions = PermissionsCoordinator()
     private let presenter = WindowPresenter()
-    private lazy var engine = GestureEngine(rules: rules)
+    private lazy var engine = GestureEngine(rules: rules, settings: settings)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -86,7 +87,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func openSettings() {
         presenter.show("settings", title: "Glimble Settings") {
-            SettingsView(rules: self.rules, recorder: self.recorder)
+            SettingsView(rules: self.rules, recorder: self.recorder, settings: self.settings)
         }
     }
 
