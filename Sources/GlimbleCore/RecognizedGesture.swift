@@ -8,4 +8,5 @@ public enum SwipeDirection: String, Codable, Equatable, Sendable, CaseIterable {
 public enum RecognizedGesture: Codable, Equatable, Sendable {
     case swipe(fingers: Int, direction: SwipeDirection)
     case tap(fingers: Int)
+    case doubleTap(fingers: Int)
 }

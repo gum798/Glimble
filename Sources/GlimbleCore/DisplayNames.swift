@@ -5,6 +5,8 @@ public extension RecognizedGesture {
             return "\(fingers)-finger swipe \(direction.rawValue)"
         case .tap(let fingers):
             return "\(fingers)-finger tap"
+        case .doubleTap(let fingers):
+            return "\(fingers)-finger double tap"
         }
     }
 }

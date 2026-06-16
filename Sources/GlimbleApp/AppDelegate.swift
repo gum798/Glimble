@@ -36,6 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             recorder.capture(gesture)
             return true
         }
+        engine.isRecordingActive = { [weak recorder] in recorder?.isRecording ?? false }
 
         touchSource.onFrame = { [weak self] frame in self?.engine.handle(frame) }
         touchSource.start()
