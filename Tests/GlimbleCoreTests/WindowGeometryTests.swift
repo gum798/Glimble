@@ -6,6 +6,10 @@ import CoreGraphics
 // AppKit visibleFrame = origin (0,0), size 1920 x 1055.
 private let vf = CGRect(x: 0, y: 0, width: 1920, height: 1055)
 
+@Test func fillFillsVisibleFrame() {
+    #expect(WindowGeometry.snapRect(.fill, in: vf) == vf)
+}
+
 @Test func maximizeFillsVisibleFrame() {
     #expect(WindowGeometry.snapRect(.maximize, in: vf) == vf)
 }

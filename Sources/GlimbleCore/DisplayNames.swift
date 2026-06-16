@@ -19,6 +19,7 @@ public extension SnapPosition {
         case .topLeft: return "Snap top-left";  case .topRight: return "Snap top-right"
         case .bottomLeft: return "Snap bottom-left"; case .bottomRight: return "Snap bottom-right"
         case .maximize: return "Maximize window"; case .center: return "Center window"
+        case .fill: return "Fill screen"
         }
     }
 }
