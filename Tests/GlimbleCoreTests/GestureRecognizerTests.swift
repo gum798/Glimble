@@ -28,3 +28,28 @@ private func frame(_ n: Int, at center: CGPoint, t: TimeInterval) -> TouchFrame 
     let result = rec.process(TouchFrame(fingers: [], timestamp: 0.03))
     #expect(result == .tap(fingers: 4))
 }
+
+@Test func threeFingerSwipeLeftIsRecognized() {
+    var rec = GestureRecognizer()
+    _ = rec.process(frame(3, at: CGPoint(x: 0.7, y: 0.5), t: 0.00))
+    _ = rec.process(frame(3, at: CGPoint(x: 0.45, y: 0.5), t: 0.02))
+    _ = rec.process(frame(3, at: CGPoint(x: 0.2, y: 0.5), t: 0.04))
+    let result = rec.process(TouchFrame(fingers: [], timestamp: 0.06))
+    #expect(result == .swipe(fingers: 3, direction: .left))
+}
+
+@Test func fourFingerSwipeUpIsRecognized() {
+    var rec = GestureRecognizer()
+    _ = rec.process(frame(4, at: CGPoint(x: 0.5, y: 0.3), t: 0.00))
+    _ = rec.process(frame(4, at: CGPoint(x: 0.5, y: 0.8), t: 0.03))
+    let result = rec.process(TouchFrame(fingers: [], timestamp: 0.05))
+    #expect(result == .swipe(fingers: 4, direction: .up))
+}
+
+@Test func dominantAxisDecidesDirection() {
+    var rec = GestureRecognizer()
+    _ = rec.process(frame(3, at: CGPoint(x: 0.3, y: 0.5), t: 0.00))
+    _ = rec.process(frame(3, at: CGPoint(x: 0.7, y: 0.6), t: 0.03))
+    let result = rec.process(TouchFrame(fingers: [], timestamp: 0.05))
+    #expect(result == .swipe(fingers: 3, direction: .right))
+}

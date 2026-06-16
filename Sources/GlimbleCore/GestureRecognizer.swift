@@ -48,10 +48,24 @@ public struct GestureRecognizer: Sendable {
 
     private func classify() -> RecognizedGesture? {
         guard maxFingers >= config.minFingers else { return nil }
+        if maxDisplacement >= config.swipeMinDistance {
+            return .swipe(fingers: maxFingers, direction: dominantDirection())
+        }
         if maxDisplacement <= config.tapMaxDistance {
             return .tap(fingers: maxFingers)
         }
         return nil
+    }
+
+    /// Direction of net travel from session start to last touching frame. y is up.
+    private func dominantDirection() -> SwipeDirection {
+        let dx = lastCentroid.x - startCentroid.x
+        let dy = lastCentroid.y - startCentroid.y
+        if abs(dx) >= abs(dy) {
+            return dx >= 0 ? .right : .left
+        } else {
+            return dy >= 0 ? .up : .down
+        }
     }
 
     private mutating func reset() {
