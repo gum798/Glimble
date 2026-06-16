@@ -11,10 +11,10 @@ cask "glimble" do
 
   url "https://github.com/gum798/Glimble/releases/download/v#{version}/Glimble-#{version}.dmg"
   name "Glimble"
-  desc "Trackpad gesture mapper for macOS (gesture → window/keyboard/script actions)"
+  desc "Trackpad gesture mapper (gesture → window/keyboard/script actions)"
   homepage "https://github.com/gum798/Glimble"
 
-  depends_on macos: ">= :sequoia"
+  depends_on macos: :sequoia
 
   app "Glimble.app"
 
