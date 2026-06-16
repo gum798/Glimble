@@ -1,4 +1,5 @@
 import CoreGraphics
+import Foundation
 
 /// Tunable thresholds (normalized 0…1 distance units).
 public struct RecognizerConfig: Sendable {
@@ -6,6 +7,8 @@ public struct RecognizerConfig: Sendable {
     public var swipeMinDistance: CGFloat = 0.08
     public var tapMaxDistance: CGFloat = 0.03
     public var pinchMinSpread: CGFloat = 0.05
+    public var rotateMinAngle: CGFloat = 0.35   // radians (~20°)
+    public var longPressMin: TimeInterval = 0.5
     public init() {}
 }
 
@@ -21,6 +24,10 @@ public struct GestureRecognizer: Sendable {
     private var maxDisplacement: CGFloat = 0
     private var startSpread: CGFloat = 0
     private var spreadDelta: CGFloat = 0
+    private var startAngles: [Int32: CGFloat] = [:]
+    private var rotationDelta: CGFloat = 0
+    private var startTimestamp: TimeInterval = 0
+    private var lastTimestamp: TimeInterval = 0
 
     public init(config: RecognizerConfig = RecognizerConfig()) {
         self.config = config
@@ -37,10 +44,14 @@ public struct GestureRecognizer: Sendable {
                 maxDisplacement = 0
                 startSpread = spread(frame)
                 spreadDelta = 0
+                startAngles = anglesByID(frame)
+                rotationDelta = 0
+                startTimestamp = frame.timestamp
             }
             return nil
         }
         if touching > 0 {
+            lastTimestamp = frame.timestamp
             if touching > maxFingers {
                 // A new finger landed. Re-baseline so displacement measures only real movement
                 // once the FULL finger count is down — the centroid shifts a lot as spread
@@ -52,6 +63,9 @@ public struct GestureRecognizer: Sendable {
                 maxDisplacement = 0
                 startSpread = spread(frame)
                 spreadDelta = 0
+                startAngles = anglesByID(frame)
+                rotationDelta = 0
+                startTimestamp = frame.timestamp
             } else if touching == maxFingers {
                 // Measure displacement only while all fingers are down. Track the centroid at
                 // peak displacement so a swipe that partially returns keeps its true direction.
@@ -62,6 +76,8 @@ public struct GestureRecognizer: Sendable {
                 }
                 let ds = spread(frame) - startSpread
                 if abs(ds) > abs(spreadDelta) { spreadDelta = ds }
+                let rot = averageRotation(frame)
+                if abs(rot) > abs(rotationDelta) { rotationDelta = rot }
             }
             // touching < maxFingers: fingers are lifting; ignore (the centroid swing as fingers
             // leave is not movement either).
@@ -74,6 +90,9 @@ public struct GestureRecognizer: Sendable {
 
     private func classify() -> RecognizedGesture? {
         guard maxFingers >= config.minFingers else { return nil }
+        if abs(rotationDelta) >= config.rotateMinAngle {
+            return .rotate(fingers: maxFingers, direction: rotationDelta > 0 ? .counterclockwise : .clockwise)
+        }
         if abs(spreadDelta) >= config.pinchMinSpread {
             return .pinch(fingers: maxFingers, zoom: spreadDelta > 0 ? .zoomIn : .zoomOut)
         }
@@ -81,6 +100,9 @@ public struct GestureRecognizer: Sendable {
             return .swipe(fingers: maxFingers, direction: dominantDirection())
         }
         if maxDisplacement <= config.tapMaxDistance {
+            if (lastTimestamp - startTimestamp) >= config.longPressMin {
+                return .longPress(fingers: maxFingers)
+            }
             return .tap(fingers: maxFingers)
         }
         return nil
@@ -117,5 +139,27 @@ public struct GestureRecognizer: Sendable {
         let c = frame.centroid
         let total = frame.fingers.reduce(CGFloat(0)) { $0 + distance($1.position, c) }
         return total / CGFloat(frame.fingers.count)
+    }
+
+    /// Angle of each finger about the cluster centroid (radians), keyed by finger id.
+    /// Fingers essentially AT the centroid (radius ~0, e.g. a coincident tap/swipe cluster)
+    /// carry no reliable angle — `atan2` on two near-zero deltas is pure rounding noise — so
+    /// they are skipped. Only fingers with real lever-arm about the center define rotation.
+    private func anglesByID(_ frame: TouchFrame) -> [Int32: CGFloat] {
+        let c = frame.centroid
+        var r: [Int32: CGFloat] = [:]
+        for f in frame.fingers {
+            let dx = f.position.x - c.x, dy = f.position.y - c.y
+            if (dx * dx + dy * dy).squareRoot() < 1e-6 { continue }
+            r[f.id] = atan2(dy, dx)
+        }
+        return r
+    }
+
+    /// Mean signed angular change (wrapped to ±π) of the fingers shared with the baseline frame.
+    private func averageRotation(_ frame: TouchFrame) -> CGFloat {
+        let now = anglesByID(frame); var sum: CGFloat = 0; var n = 0
+        for (id, start) in startAngles { if let cur = now[id] { sum += atan2(sin(cur - start), cos(cur - start)); n += 1 } }
+        return n > 0 ? sum / CGFloat(n) : 0
     }
 }

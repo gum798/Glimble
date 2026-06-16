@@ -29,8 +29,10 @@ final class RulesModel: ObservableObject {
     }
 
     /// Current resolution used by the engine.
-    func action(for gesture: RecognizedGesture, frontmostBundleID: String?) -> GlimbleAction? {
-        RuleStore(ruleSet: ruleSet).action(for: gesture, frontmostBundleID: frontmostBundleID)
+    func action(for gesture: RecognizedGesture, frontmostBundleID: String?,
+                heldModifiers: [KeyModifier] = []) -> GlimbleAction? {
+        RuleStore(ruleSet: ruleSet).action(for: gesture, frontmostBundleID: frontmostBundleID,
+                                           heldModifiers: heldModifiers)
     }
 
     func add(_ rule: Rule)          { mutate { $0.adding(rule) } }

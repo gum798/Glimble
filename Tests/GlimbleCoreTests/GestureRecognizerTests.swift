@@ -159,3 +159,56 @@ private func frame(_ n: Int, at center: CGPoint, t: TimeInterval) -> TouchFrame 
     _ = rec.process(TouchFrame(fingers: formation(0.4), timestamp: 0.03))
     #expect(rec.process(TouchFrame(fingers: [], timestamp: 0.05)) == .swipe(fingers: 3, direction: .right))
 }
+
+@Test func twoFingerRotationIsRotate() {
+    var rec = GestureRecognizer()
+    func a(_ p: CGPoint) -> Finger { Finger(id: 0, position: p, pressure: 0.6) }
+    func b(_ p: CGPoint) -> Finger { Finger(id: 1, position: p, pressure: 0.6) }
+    _ = rec.process(TouchFrame(fingers: [a(CGPoint(x:0.3,y:0.5)), b(CGPoint(x:0.7,y:0.5))], timestamp: 0))
+    _ = rec.process(TouchFrame(fingers: [a(CGPoint(x:0.5,y:0.3)), b(CGPoint(x:0.5,y:0.7))], timestamp: 0.03))
+    #expect(rec.process(TouchFrame(fingers: [], timestamp: 0.05)) == .rotate(fingers: 2, direction: .counterclockwise))
+}
+
+@Test func heldStillBeyondThresholdIsLongPress() {
+    var rec = GestureRecognizer()
+    let c = CGPoint(x: 0.5, y: 0.5)
+    _ = rec.process(frame(3, at: c, t: 0.0))
+    _ = rec.process(frame(3, at: c, t: 0.6))
+    #expect(rec.process(TouchFrame(fingers: [], timestamp: 0.61)) == .longPress(fingers: 3))
+}
+
+@Test func quickStillTapStaysTap() {
+    var rec = GestureRecognizer()
+    let c = CGPoint(x: 0.5, y: 0.5)
+    _ = rec.process(frame(3, at: c, t: 0.0))
+    _ = rec.process(frame(3, at: c, t: 0.1))
+    #expect(rec.process(TouchFrame(fingers: [], timestamp: 0.11)) == .tap(fingers: 3))
+}
+
+// Explicit gates: a real translation (spread fingers, lever-arm present) and a real pinch
+// must NOT be misread as rotate — the rotate check runs first, so these pin that boundary.
+
+@Test func translationWithSpreadFingersIsSwipeNotRotate() {
+    var rec = GestureRecognizer()
+    func form(_ dx: CGFloat) -> [Finger] {
+        [Finger(id: 0, position: CGPoint(x: 0.2 + dx, y: 0.50), pressure: 0.6),
+         Finger(id: 1, position: CGPoint(x: 0.3 + dx, y: 0.55), pressure: 0.6),
+         Finger(id: 2, position: CGPoint(x: 0.25 + dx, y: 0.45), pressure: 0.6)]
+    }
+    _ = rec.process(TouchFrame(fingers: form(0), timestamp: 0))
+    _ = rec.process(TouchFrame(fingers: form(0.4), timestamp: 0.03))
+    #expect(rec.process(TouchFrame(fingers: [], timestamp: 0.05)) == .swipe(fingers: 3, direction: .right))
+}
+
+@Test func pinchIsZoomNotRotate() {
+    var rec = GestureRecognizer()
+    let close = [Finger(id: 0, position: CGPoint(x: 0.4, y: 0.5), pressure: 0.6),
+                 Finger(id: 1, position: CGPoint(x: 0.6, y: 0.5), pressure: 0.6),
+                 Finger(id: 2, position: CGPoint(x: 0.5, y: 0.5), pressure: 0.6)]
+    let wide  = [Finger(id: 0, position: CGPoint(x: 0.2, y: 0.5), pressure: 0.6),
+                 Finger(id: 1, position: CGPoint(x: 0.8, y: 0.5), pressure: 0.6),
+                 Finger(id: 2, position: CGPoint(x: 0.5, y: 0.5), pressure: 0.6)]
+    _ = rec.process(TouchFrame(fingers: close, timestamp: 0))
+    _ = rec.process(TouchFrame(fingers: wide, timestamp: 0.03))
+    #expect(rec.process(TouchFrame(fingers: [], timestamp: 0.05)) == .pinch(fingers: 3, zoom: .zoomIn))
+}

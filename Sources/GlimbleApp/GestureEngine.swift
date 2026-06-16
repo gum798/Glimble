@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import GlimbleCore
 
@@ -19,13 +20,24 @@ final class GestureEngine {
     private let settings: AppSettings
 
     /// Returns `true` if the gesture was consumed for recording (so no action should run).
-    var recordingSink: ((RecognizedGesture) -> Bool)?
+    var recordingSink: ((RecognizedGesture, [KeyModifier]) -> Bool)?
     /// Whether the editor is currently waiting to record a gesture.
     var isRecordingActive: (() -> Bool)?
 
     init(rules: RulesModel, settings: AppSettings) {
         self.rules = rules
         self.settings = settings
+    }
+
+    /// The keyboard modifiers currently physically held, in canonical order.
+    static func currentModifiers() -> [KeyModifier] {
+        let f = NSEvent.modifierFlags
+        var m: [KeyModifier] = []
+        if f.contains(.control) { m.append(.control) }
+        if f.contains(.option) { m.append(.option) }
+        if f.contains(.shift) { m.append(.shift) }
+        if f.contains(.command) { m.append(.command) }
+        return m
     }
 
     func handle(_ frame: TouchFrame) {
@@ -39,8 +51,10 @@ final class GestureEngine {
     }
 
     private func deliver(_ gesture: RecognizedGesture) {
-        if recordingSink?(gesture) == true { return }   // captured by the recorder; don't execute
-        guard let action = rules.action(for: gesture, frontmostBundleID: AppContext.frontmostBundleID)
+        let mods = Self.currentModifiers()
+        if recordingSink?(gesture, mods) == true { return }   // captured by the recorder; don't execute
+        guard let action = rules.action(for: gesture, frontmostBundleID: AppContext.frontmostBundleID,
+                                        heldModifiers: mods)
         else { return }
         ActionExecutor.run(action)
     }

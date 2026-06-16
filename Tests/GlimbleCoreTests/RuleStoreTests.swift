@@ -3,8 +3,8 @@ import Foundation
 @testable import GlimbleCore
 
 private func rule(_ scope: RuleScope, _ trigger: RecognizedGesture, _ action: GlimbleAction,
-                  enabled: Bool = true) -> Rule {
-    Rule(scope: scope, trigger: trigger, action: action, enabled: enabled)
+                  modifiers: [KeyModifier] = [], enabled: Bool = true) -> Rule {
+    Rule(scope: scope, trigger: trigger, action: action, modifiers: modifiers, enabled: enabled)
 }
 
 @Test func matchesGlobalRule() {
@@ -25,6 +25,32 @@ private func rule(_ scope: RuleScope, _ trigger: RecognizedGesture, _ action: Gl
             == .keyboardShortcut(KeyCombo(keyCode: 123, modifiers: [.command])))
     #expect(store.action(for: .swipe(fingers: 3, direction: .left), frontmostBundleID: "com.apple.Finder")
             == .window(.left))
+}
+
+@Test func ruleWithModifiersMatchesOnlyWhenHeldExactly() {
+    let store = RuleStore(ruleSet: RuleSet(rules: [
+        rule(.global, .tap(fingers: 3), .window(.maximize), modifiers: [.command]),
+    ]))
+    #expect(store.action(for: .tap(fingers: 3), frontmostBundleID: nil,
+                         heldModifiers: [.command]) == .window(.maximize))
+    #expect(store.action(for: .tap(fingers: 3), frontmostBundleID: nil,
+                         heldModifiers: []) == nil)
+    #expect(store.action(for: .tap(fingers: 3), frontmostBundleID: nil,
+                         heldModifiers: [.command, .shift]) == nil)
+    #expect(store.action(for: .tap(fingers: 3), frontmostBundleID: nil,
+                         heldModifiers: [.option]) == nil)
+}
+
+@Test func ruleWithoutModifiersMatchesOnlyWhenNoneHeld() {
+    let store = RuleStore(ruleSet: RuleSet(rules: [
+        rule(.global, .tap(fingers: 3), .window(.center)),
+    ]))
+    #expect(store.action(for: .tap(fingers: 3), frontmostBundleID: nil,
+                         heldModifiers: []) == .window(.center))
+    #expect(store.action(for: .tap(fingers: 3), frontmostBundleID: nil,
+                         heldModifiers: [.command]) == nil)
+    // Default heldModifiers argument means "none held".
+    #expect(store.action(for: .tap(fingers: 3), frontmostBundleID: nil) == .window(.center))
 }
 
 @Test func disabledRulesAreIgnored() {

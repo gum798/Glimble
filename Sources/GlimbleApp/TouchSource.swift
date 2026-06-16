@@ -9,7 +9,6 @@ import OpenMultitouchSupport
 final class TouchSource {
     private let manager = OMSManager.shared
     private var task: Task<Void, Never>?
-    private var frameCounter: TimeInterval = 0
 
     /// Called on the main actor with each normalized frame.
     var onFrame: ((TouchFrame) -> Void)?
@@ -22,7 +21,7 @@ final class TouchSource {
             // frames can be dropped. The recognizer tolerates this by tracking max/peak rather
             // than integrating per-frame — keep `onFrame`/`engine.handle` cheap so frames flow.
             for await touches in self.manager.touchDataStream {
-                let frame = Self.normalize(touches, sequence: self.nextTimestamp())
+                let frame = Self.normalize(touches, timestamp: ProcessInfo.processInfo.systemUptime)
                 self.onFrame?(frame)
             }
         }
@@ -34,12 +33,7 @@ final class TouchSource {
         manager.stopListening()
     }
 
-    private func nextTimestamp() -> TimeInterval {
-        frameCounter += 0.01
-        return frameCounter
-    }
-
-    private static func normalize(_ touches: [OMSTouchData], sequence t: TimeInterval) -> TouchFrame {
+    private static func normalize(_ touches: [OMSTouchData], timestamp t: TimeInterval) -> TouchFrame {
         let fingers = touches
             .filter { $0.state == .touching }
             .map { d in

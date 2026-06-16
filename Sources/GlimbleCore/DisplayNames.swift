@@ -11,6 +11,10 @@ public extension RecognizedGesture {
             return "\(fingers)-finger triple tap"
         case .pinch(let fingers, let zoom):
             return "\(fingers)-finger zoom \(zoom.rawValue)"
+        case .rotate(let f, let d):
+            return "\(f)-finger rotate " + (d == .clockwise ? "clockwise" : "counterclockwise")
+        case .longPress(let f):
+            return "\(f)-finger long press"
         }
     }
 }

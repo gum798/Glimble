@@ -72,7 +72,7 @@ struct RulesTab: View {
             Image(systemName: gestureSymbol(rule.trigger))
                 .frame(width: 20).foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 1) {
-                Text(rule.trigger.displayName)
+                Text((rule.modifiers.symbols.isEmpty ? "" : rule.modifiers.symbols + "  ") + rule.trigger.displayName)
                 Text(rule.action.displayName).font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
@@ -130,6 +130,8 @@ struct RulesTab: View {
         case .doubleTap: return "hand.tap.fill"
         case .tripleTap: return "hand.tap.fill"
         case .pinch(_, let zoom): return zoom == .zoomIn ? "plus.magnifyingglass" : "minus.magnifyingglass"
+        case .rotate(_, let d): return d == .clockwise ? "arrow.clockwise" : "arrow.counterclockwise"
+        case .longPress: return "hand.point.up.left.fill"
         case .swipe(_, let dir):
             switch dir {
             case .left: return "arrow.left"; case .right: return "arrow.right"

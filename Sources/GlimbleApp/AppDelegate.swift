@@ -32,9 +32,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         // Offer each recognized gesture to the recorder FIRST; it consumes the gesture only
         // while the settings editor is actively recording, otherwise the action runs.
-        engine.recordingSink = { [weak recorder] gesture in
+        engine.recordingSink = { [weak recorder] gesture, mods in
             guard let recorder, recorder.isRecording else { return false }
-            recorder.capture(gesture)
+            recorder.capture(gesture, modifiers: mods)
             return true
         }
         engine.isRecordingActive = { [weak recorder] in recorder?.isRecording ?? false }

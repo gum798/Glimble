@@ -7,9 +7,11 @@ import GlimbleCore
 final class Recorder: ObservableObject {
     @Published var isRecording = false
     @Published var captured: RecognizedGesture?
+    @Published var capturedModifiers: [KeyModifier] = []
 
     func start() {
         captured = nil
+        capturedModifiers = []
         isRecording = true
     }
 
@@ -17,10 +19,12 @@ final class Recorder: ObservableObject {
         isRecording = false
     }
 
-    /// Called by the engine bridge with a recognized gesture while recording.
-    func capture(_ gesture: RecognizedGesture) {
+    /// Called by the engine bridge with a recognized gesture (and the modifiers held at that
+    /// moment) while recording.
+    func capture(_ gesture: RecognizedGesture, modifiers: [KeyModifier]) {
         guard isRecording else { return }
         captured = gesture
+        capturedModifiers = modifiers
         isRecording = false
     }
 }

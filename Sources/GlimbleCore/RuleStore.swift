@@ -4,8 +4,11 @@ public struct RuleStore: Sendable {
     public private(set) var ruleSet: RuleSet
     public init(ruleSet: RuleSet) { self.ruleSet = ruleSet }
 
-    public func action(for gesture: RecognizedGesture, frontmostBundleID: String?) -> GlimbleAction? {
-        let candidates = ruleSet.rules.filter { $0.enabled && $0.trigger == gesture }
+    public func action(for gesture: RecognizedGesture, frontmostBundleID: String?,
+                       heldModifiers: [KeyModifier] = []) -> GlimbleAction? {
+        let candidates = ruleSet.rules.filter {
+            $0.enabled && $0.trigger == gesture && Set($0.modifiers) == Set(heldModifiers)
+        }
         if let bundleID = frontmostBundleID,
            let appRule = candidates.first(where: { $0.scope == .app(bundleID: bundleID) }) {
             return appRule.action

@@ -9,6 +9,12 @@ public enum ZoomDirection: String, Codable, Equatable, Sendable, CaseIterable {
     case zoomOut = "out"
 }
 
+/// Rotation direction for a rotate gesture. Raw values are the JSON encoding.
+public enum RotationDirection: String, Codable, Equatable, Sendable, CaseIterable {
+    case clockwise = "cw"
+    case counterclockwise = "ccw"
+}
+
 /// A gesture the recognizer can emit. Also serves as a rule's trigger (matched by equality),
 /// so it is `Codable`.
 public enum RecognizedGesture: Codable, Equatable, Sendable {
@@ -17,4 +23,6 @@ public enum RecognizedGesture: Codable, Equatable, Sendable {
     case doubleTap(fingers: Int)
     case tripleTap(fingers: Int)
     case pinch(fingers: Int, zoom: ZoomDirection)
+    case rotate(fingers: Int, direction: RotationDirection)
+    case longPress(fingers: Int)
 }

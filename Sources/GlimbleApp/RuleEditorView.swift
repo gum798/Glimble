@@ -18,6 +18,7 @@ struct RuleEditorView: View {
     let onCancel: () -> Void
 
     @State private var trigger: RecognizedGesture?
+    @State private var triggerModifiers: [KeyModifier] = []
     @State private var actionKind: ActionKind = .window
     @State private var snapPosition: SnapPosition = .maximize
     @State private var shortcutKeyCode: UInt16?
@@ -83,7 +84,10 @@ struct RuleEditorView: View {
         .onAppear(perform: loadExisting)
         .onDisappear { recorder.cancel() }   // never leave the shared recorder armed after exit
         .onChange(of: recorder.captured) { _, newValue in
-            if let g = newValue { trigger = g }
+            if let g = newValue {
+                trigger = g
+                triggerModifiers = recorder.capturedModifiers
+            }
         }
     }
 
@@ -159,7 +163,9 @@ struct RuleEditorView: View {
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(Color.accentColor)
                 VStack(spacing: 4) {
-                    Text(trigger.displayName)
+                    Text(triggerModifiers.symbols.isEmpty
+                         ? trigger.displayName
+                         : triggerModifiers.symbols + " " + trigger.displayName)
                         .font(.title3.weight(.semibold))
                     Text(GestureGlyph.subtitle(for: trigger))
                         .font(.caption)
@@ -368,6 +374,7 @@ struct RuleEditorView: View {
     private func loadExisting() {
         guard let rule = existing else { return }
         trigger = rule.trigger
+        triggerModifiers = rule.modifiers
         if case .app(let b) = rule.scope { scopeBundleID = b }
         switch rule.action {
         case .window(let pos):
@@ -406,7 +413,7 @@ struct RuleEditorView: View {
         }
         let scope: RuleScope = scopeBundleID.isEmpty ? .global : .app(bundleID: scopeBundleID)
         let rule = Rule(id: existing?.id ?? UUID(), scope: scope, trigger: trigger,
-                        action: action, enabled: existing?.enabled ?? true)
+                        action: action, modifiers: triggerModifiers, enabled: existing?.enabled ?? true)
         onSave(rule)
     }
 }
@@ -624,6 +631,8 @@ private enum GestureGlyph {
         case .doubleTap: return "hand.tap.fill"
         case .tripleTap: return "hand.tap.fill"
         case .pinch(_, let zoom): return zoom == .zoomIn ? "plus.magnifyingglass" : "minus.magnifyingglass"
+        case .rotate(_, let d): return d == .clockwise ? "arrow.clockwise" : "arrow.counterclockwise"
+        case .longPress: return "hand.point.up.left.fill"
         case .swipe(_, let dir):
             switch dir {
             case .left: return "arrow.left"
@@ -642,6 +651,8 @@ private enum GestureGlyph {
         case .tripleTap(let f): return "\(fingerLabel(f)) · triple tap"
         case .swipe(let f, let dir): return "\(fingerLabel(f)) · swipe \(dir.rawValue)"
         case .pinch(let f, let zoom): return "\(fingerLabel(f)) · zoom \(zoom.rawValue)"
+        case .rotate(let f, let d): return "\(fingerLabel(f)) · rotate " + (d == .clockwise ? "clockwise" : "counterclockwise")
+        case .longPress(let f): return "\(fingerLabel(f)) · long press"
         }
     }
 
