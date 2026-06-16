@@ -31,8 +31,8 @@ final class GestureEngine {
     func handle(_ frame: TouchFrame) {
         combiner.doubleTapWindow = settings.doubleTapWindow
         guard let raw = recognizer.process(frame) else { return }
-        let delivered = combiner.input(raw, now: Self.now()) { [weak self] fingers in
-            self?.shouldCombineTaps(fingers: fingers) ?? false
+        let delivered = combiner.input(raw, now: Self.now()) { [weak self] fingers, count in
+            self?.wantsMoreTaps(fingers: fingers, after: count) ?? false
         }
         for gesture in delivered { deliver(gesture) }
         rescheduleFlush()
@@ -45,11 +45,17 @@ final class GestureEngine {
         ActionExecutor.run(action)
     }
 
-    /// Hold a first tap (to await a possible double) only when recording, or when a double-tap
-    /// rule exists for that finger count.
-    private func shouldCombineTaps(fingers: Int) -> Bool {
+    /// Whether to keep holding for one more tap after reaching `count` taps: yes while recording,
+    /// or when a rule needs more taps for this finger count (double rule → reach 2; triple → reach 3).
+    private func wantsMoreTaps(fingers: Int, after count: Int) -> Bool {
         if isRecordingActive?() == true { return true }
-        return rules.ruleSet.rules.contains { $0.enabled && $0.trigger == .doubleTap(fingers: fingers) }
+        let rs = rules.ruleSet.rules
+        func has(_ g: RecognizedGesture) -> Bool { rs.contains { $0.enabled && $0.trigger == g } }
+        switch count {
+        case 1: return has(.doubleTap(fingers: fingers)) || has(.tripleTap(fingers: fingers))
+        case 2: return has(.tripleTap(fingers: fingers))
+        default: return false
+        }
     }
 
     /// (Re)arm a timer to flush a held tap once its double-tap window expires.

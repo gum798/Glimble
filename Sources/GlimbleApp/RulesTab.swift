@@ -128,6 +128,8 @@ struct RulesTab: View {
         switch g {
         case .tap: return "hand.tap"
         case .doubleTap: return "hand.tap.fill"
+        case .tripleTap: return "hand.tap.fill"
+        case .pinch(_, let zoom): return zoom == .zoomIn ? "plus.magnifyingglass" : "minus.magnifyingglass"
         case .swipe(_, let dir):
             switch dir {
             case .left: return "arrow.left"; case .right: return "arrow.right"

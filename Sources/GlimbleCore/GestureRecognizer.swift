@@ -5,6 +5,7 @@ public struct RecognizerConfig: Sendable {
     public var minFingers: Int = 2
     public var swipeMinDistance: CGFloat = 0.08
     public var tapMaxDistance: CGFloat = 0.03
+    public var pinchMinSpread: CGFloat = 0.05
     public init() {}
 }
 
@@ -18,6 +19,8 @@ public struct GestureRecognizer: Sendable {
     private var startCentroid: CGPoint = .zero
     private var peakCentroid: CGPoint = .zero   // centroid at the point of max displacement
     private var maxDisplacement: CGFloat = 0
+    private var startSpread: CGFloat = 0
+    private var spreadDelta: CGFloat = 0
 
     public init(config: RecognizerConfig = RecognizerConfig()) {
         self.config = config
@@ -32,6 +35,8 @@ public struct GestureRecognizer: Sendable {
                 startCentroid = frame.centroid
                 peakCentroid = frame.centroid
                 maxDisplacement = 0
+                startSpread = spread(frame)
+                spreadDelta = 0
             }
             return nil
         }
@@ -45,6 +50,8 @@ public struct GestureRecognizer: Sendable {
                 startCentroid = frame.centroid
                 peakCentroid = frame.centroid
                 maxDisplacement = 0
+                startSpread = spread(frame)
+                spreadDelta = 0
             } else if touching == maxFingers {
                 // Measure displacement only while all fingers are down. Track the centroid at
                 // peak displacement so a swipe that partially returns keeps its true direction.
@@ -53,6 +60,8 @@ public struct GestureRecognizer: Sendable {
                     maxDisplacement = d
                     peakCentroid = frame.centroid
                 }
+                let ds = spread(frame) - startSpread
+                if abs(ds) > abs(spreadDelta) { spreadDelta = ds }
             }
             // touching < maxFingers: fingers are lifting; ignore (the centroid swing as fingers
             // leave is not movement either).
@@ -65,6 +74,9 @@ public struct GestureRecognizer: Sendable {
 
     private func classify() -> RecognizedGesture? {
         guard maxFingers >= config.minFingers else { return nil }
+        if abs(spreadDelta) >= config.pinchMinSpread {
+            return .pinch(fingers: maxFingers, zoom: spreadDelta > 0 ? .zoomIn : .zoomOut)
+        }
         if maxDisplacement >= config.swipeMinDistance {
             return .swipe(fingers: maxFingers, direction: dominantDirection())
         }
@@ -97,5 +109,13 @@ public struct GestureRecognizer: Sendable {
     private func distance(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
         let dx = a.x - b.x, dy = a.y - b.y
         return (dx * dx + dy * dy).squareRoot()
+    }
+
+    /// Average distance of the fingers from the centroid — grows on spread, shrinks on pinch.
+    private func spread(_ frame: TouchFrame) -> CGFloat {
+        guard frame.fingers.count > 1 else { return 0 }
+        let c = frame.centroid
+        let total = frame.fingers.reduce(CGFloat(0)) { $0 + distance($1.position, c) }
+        return total / CGFloat(frame.fingers.count)
     }
 }

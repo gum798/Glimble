@@ -118,3 +118,44 @@ private func frame(_ n: Int, at center: CGPoint, t: TimeInterval) -> TouchFrame 
     let result = rec.process(TouchFrame(fingers: [], timestamp: 0.03))
     #expect(result == .tap(fingers: 2))
 }
+
+@Test func threeFingerSpreadIsZoomIn() {
+    // Two fingers move apart horizontally around a fixed center; the 3rd stays put.
+    // Centroid fixed (0.5,0.5) so it's not a swipe; spread grows → zoom in.
+    var rec = GestureRecognizer()
+    let close = [Finger(id: 0, position: CGPoint(x: 0.4, y: 0.5), pressure: 0.6),
+                 Finger(id: 1, position: CGPoint(x: 0.6, y: 0.5), pressure: 0.6),
+                 Finger(id: 2, position: CGPoint(x: 0.5, y: 0.5), pressure: 0.6)]
+    let wide  = [Finger(id: 0, position: CGPoint(x: 0.2, y: 0.5), pressure: 0.6),
+                 Finger(id: 1, position: CGPoint(x: 0.8, y: 0.5), pressure: 0.6),
+                 Finger(id: 2, position: CGPoint(x: 0.5, y: 0.5), pressure: 0.6)]
+    _ = rec.process(TouchFrame(fingers: close, timestamp: 0.0))
+    _ = rec.process(TouchFrame(fingers: wide, timestamp: 0.03))
+    #expect(rec.process(TouchFrame(fingers: [], timestamp: 0.05)) == .pinch(fingers: 3, zoom: .zoomIn))
+}
+
+@Test func threeFingerPinchIsZoomOut() {
+    var rec = GestureRecognizer()
+    let wide  = [Finger(id: 0, position: CGPoint(x: 0.2, y: 0.5), pressure: 0.6),
+                 Finger(id: 1, position: CGPoint(x: 0.8, y: 0.5), pressure: 0.6),
+                 Finger(id: 2, position: CGPoint(x: 0.5, y: 0.5), pressure: 0.6)]
+    let close = [Finger(id: 0, position: CGPoint(x: 0.4, y: 0.5), pressure: 0.6),
+                 Finger(id: 1, position: CGPoint(x: 0.6, y: 0.5), pressure: 0.6),
+                 Finger(id: 2, position: CGPoint(x: 0.5, y: 0.5), pressure: 0.6)]
+    _ = rec.process(TouchFrame(fingers: wide, timestamp: 0.0))
+    _ = rec.process(TouchFrame(fingers: close, timestamp: 0.03))
+    #expect(rec.process(TouchFrame(fingers: [], timestamp: 0.05)) == .pinch(fingers: 3, zoom: .zoomOut))
+}
+
+@Test func threeFingerTranslationIsSwipeNotPinch() {
+    // Fixed formation translating right: spread constant → not a pinch; centroid moves → swipe.
+    var rec = GestureRecognizer()
+    func formation(_ dx: CGFloat) -> [Finger] {
+        [Finger(id: 0, position: CGPoint(x: 0.2 + dx, y: 0.5), pressure: 0.6),
+         Finger(id: 1, position: CGPoint(x: 0.3 + dx, y: 0.5), pressure: 0.6),
+         Finger(id: 2, position: CGPoint(x: 0.25 + dx, y: 0.6), pressure: 0.6)]
+    }
+    _ = rec.process(TouchFrame(fingers: formation(0), timestamp: 0.0))
+    _ = rec.process(TouchFrame(fingers: formation(0.4), timestamp: 0.03))
+    #expect(rec.process(TouchFrame(fingers: [], timestamp: 0.05)) == .swipe(fingers: 3, direction: .right))
+}

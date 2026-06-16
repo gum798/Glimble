@@ -7,6 +7,10 @@ public extension RecognizedGesture {
             return "\(fingers)-finger tap"
         case .doubleTap(let fingers):
             return "\(fingers)-finger double tap"
+        case .tripleTap(let fingers):
+            return "\(fingers)-finger triple tap"
+        case .pinch(let fingers, let zoom):
+            return "\(fingers)-finger zoom \(zoom.rawValue)"
         }
     }
 }
