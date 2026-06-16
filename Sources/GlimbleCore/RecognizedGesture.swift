@@ -15,6 +15,11 @@ public enum RotationDirection: String, Codable, Equatable, Sendable, CaseIterabl
     case counterclockwise = "ccw"
 }
 
+/// A trackpad edge an edge swipe can start from. Raw values are the JSON encoding.
+public enum TrackpadEdge: String, Codable, Equatable, Sendable, CaseIterable {
+    case left, right, top, bottom
+}
+
 /// A gesture the recognizer can emit. Also serves as a rule's trigger (matched by equality),
 /// so it is `Codable`.
 public enum RecognizedGesture: Codable, Equatable, Sendable {
@@ -25,4 +30,6 @@ public enum RecognizedGesture: Codable, Equatable, Sendable {
     case pinch(fingers: Int, zoom: ZoomDirection)
     case rotate(fingers: Int, direction: RotationDirection)
     case longPress(fingers: Int)
+    case edgeSwipe(fingers: Int, edge: TrackpadEdge)
+    case forceTouch(fingers: Int)
 }

@@ -132,6 +132,8 @@ struct RulesTab: View {
         case .pinch(_, let zoom): return zoom == .zoomIn ? "plus.magnifyingglass" : "minus.magnifyingglass"
         case .rotate(_, let d): return d == .clockwise ? "arrow.clockwise" : "arrow.counterclockwise"
         case .longPress: return "hand.point.up.left.fill"
+        case .edgeSwipe: return "arrow.right.to.line"
+        case .forceTouch: return "hand.point.up.left.fill"
         case .swipe(_, let dir):
             switch dir {
             case .left: return "arrow.left"; case .right: return "arrow.right"

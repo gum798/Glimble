@@ -9,6 +9,8 @@ public struct RecognizerConfig: Sendable {
     public var pinchMinSpread: CGFloat = 0.05
     public var rotateMinAngle: CGFloat = 0.35   // radians (~20°)
     public var longPressMin: TimeInterval = 0.5
+    public var edgeThreshold: CGFloat = 0.06
+    public var forceMinPressure: Float = 2.0    // hardware-dependent; tuned on-device later
     public init() {}
 }
 
@@ -26,6 +28,7 @@ public struct GestureRecognizer: Sendable {
     private var spreadDelta: CGFloat = 0
     private var startAngles: [Int32: CGFloat] = [:]
     private var rotationDelta: CGFloat = 0
+    private var maxPressure: Float = 0
     private var startTimestamp: TimeInterval = 0
     private var lastTimestamp: TimeInterval = 0
 
@@ -46,6 +49,7 @@ public struct GestureRecognizer: Sendable {
                 spreadDelta = 0
                 startAngles = anglesByID(frame)
                 rotationDelta = 0
+                maxPressure = 0
                 startTimestamp = frame.timestamp
             }
             return nil
@@ -65,6 +69,7 @@ public struct GestureRecognizer: Sendable {
                 spreadDelta = 0
                 startAngles = anglesByID(frame)
                 rotationDelta = 0
+                maxPressure = 0
                 startTimestamp = frame.timestamp
             } else if touching == maxFingers {
                 // Measure displacement only while all fingers are down. Track the centroid at
@@ -78,6 +83,7 @@ public struct GestureRecognizer: Sendable {
                 if abs(ds) > abs(spreadDelta) { spreadDelta = ds }
                 let rot = averageRotation(frame)
                 if abs(rot) > abs(rotationDelta) { rotationDelta = rot }
+                maxPressure = max(maxPressure, frame.fingers.map(\.pressure).max() ?? 0)
             }
             // touching < maxFingers: fingers are lifting; ignore (the centroid swing as fingers
             // leave is not movement either).
@@ -97,14 +103,28 @@ public struct GestureRecognizer: Sendable {
             return .pinch(fingers: maxFingers, zoom: spreadDelta > 0 ? .zoomIn : .zoomOut)
         }
         if maxDisplacement >= config.swipeMinDistance {
-            return .swipe(fingers: maxFingers, direction: dominantDirection())
+            let dir = dominantDirection()
+            if let edge = startEdge(for: dir) { return .edgeSwipe(fingers: maxFingers, edge: edge) }
+            return .swipe(fingers: maxFingers, direction: dir)
         }
         if maxDisplacement <= config.tapMaxDistance {
+            if maxPressure >= config.forceMinPressure { return .forceTouch(fingers: maxFingers) }
             if (lastTimestamp - startTimestamp) >= config.longPressMin {
                 return .longPress(fingers: maxFingers)
             }
             return .tap(fingers: maxFingers)
         }
+        return nil
+    }
+
+    /// The trackpad edge an inward swipe started from, if the session began within `edgeThreshold`
+    /// of that edge AND the dominant direction moves inward from it; else nil (a normal swipe).
+    private func startEdge(for dir: SwipeDirection) -> TrackpadEdge? {
+        let t = config.edgeThreshold
+        if startCentroid.x <= t && dir == .right { return .left }
+        if startCentroid.x >= 1 - t && dir == .left { return .right }
+        if startCentroid.y <= t && dir == .up { return .bottom }
+        if startCentroid.y >= 1 - t && dir == .down { return .top }
         return nil
     }
 

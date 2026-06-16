@@ -15,6 +15,10 @@ public extension RecognizedGesture {
             return "\(f)-finger rotate " + (d == .clockwise ? "clockwise" : "counterclockwise")
         case .longPress(let f):
             return "\(f)-finger long press"
+        case .edgeSwipe(let f, let e):
+            return "\(f)-finger edge swipe from \(e.rawValue)"
+        case .forceTouch(let f):
+            return "\(f)-finger force touch"
         }
     }
 }

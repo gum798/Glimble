@@ -212,3 +212,35 @@ private func frame(_ n: Int, at center: CGPoint, t: TimeInterval) -> TouchFrame 
     _ = rec.process(TouchFrame(fingers: wide, timestamp: 0.03))
     #expect(rec.process(TouchFrame(fingers: [], timestamp: 0.05)) == .pinch(fingers: 3, zoom: .zoomIn))
 }
+
+// MARK: - Edge swipe
+
+@Test func swipeFromLeftEdgeIsEdgeSwipe() {
+    var rec = GestureRecognizer()
+    _ = rec.process(frame(3, at: CGPoint(x: 0.03, y: 0.5), t: 0))
+    _ = rec.process(frame(3, at: CGPoint(x: 0.5, y: 0.5), t: 0.03))
+    #expect(rec.process(TouchFrame(fingers: [], timestamp: 0.05)) == .edgeSwipe(fingers: 3, edge: .left))
+}
+
+@Test func midScreenSwipeIsRegularSwipe() {
+    var rec = GestureRecognizer()
+    _ = rec.process(frame(3, at: CGPoint(x: 0.3, y: 0.5), t: 0))
+    _ = rec.process(frame(3, at: CGPoint(x: 0.7, y: 0.5), t: 0.03))
+    #expect(rec.process(TouchFrame(fingers: [], timestamp: 0.05)) == .swipe(fingers: 3, direction: .right))
+}
+
+// MARK: - Force touch
+
+@Test func hardPressIsForceTouch() {
+    var rec = GestureRecognizer()
+    func hard(_ t: TimeInterval) -> TouchFrame { TouchFrame(fingers: (0..<3).map { Finger(id: Int32($0), position: CGPoint(x: 0.5, y: 0.5), pressure: 3.0) }, timestamp: t) }
+    _ = rec.process(hard(0)); _ = rec.process(hard(0.05))
+    #expect(rec.process(TouchFrame(fingers: [], timestamp: 0.06)) == .forceTouch(fingers: 3))
+}
+
+@Test func lightPressStaysTap() {
+    var rec = GestureRecognizer()
+    func light(_ t: TimeInterval) -> TouchFrame { TouchFrame(fingers: (0..<3).map { Finger(id: Int32($0), position: CGPoint(x: 0.5, y: 0.5), pressure: 0.5) }, timestamp: t) }
+    _ = rec.process(light(0)); _ = rec.process(light(0.05))
+    #expect(rec.process(TouchFrame(fingers: [], timestamp: 0.06)) == .tap(fingers: 3))
+}

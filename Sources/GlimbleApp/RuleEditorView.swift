@@ -633,6 +633,8 @@ private enum GestureGlyph {
         case .pinch(_, let zoom): return zoom == .zoomIn ? "plus.magnifyingglass" : "minus.magnifyingglass"
         case .rotate(_, let d): return d == .clockwise ? "arrow.clockwise" : "arrow.counterclockwise"
         case .longPress: return "hand.point.up.left.fill"
+        case .edgeSwipe: return "arrow.right.to.line"
+        case .forceTouch: return "hand.point.up.left.fill"
         case .swipe(_, let dir):
             switch dir {
             case .left: return "arrow.left"
@@ -653,6 +655,8 @@ private enum GestureGlyph {
         case .pinch(let f, let zoom): return "\(fingerLabel(f)) · zoom \(zoom.rawValue)"
         case .rotate(let f, let d): return "\(fingerLabel(f)) · rotate " + (d == .clockwise ? "clockwise" : "counterclockwise")
         case .longPress(let f): return "\(fingerLabel(f)) · long press"
+        case .edgeSwipe(let f, _): return "\(fingerLabel(f)) · edge swipe"
+        case .forceTouch(let f): return "\(fingerLabel(f)) · force press"
         }
     }
 
