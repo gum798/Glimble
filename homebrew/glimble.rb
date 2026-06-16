@@ -7,7 +7,7 @@
 # scripts/release.sh (see docs/RELEASING.md).
 cask "glimble" do
   version "0.1.0"
-  sha256 "0000000000000000000000000000000000000000000000000000000000000000"
+  sha256 "d44bdb1db6231035a76e79450e45cfa6e7e48a1136405b4e16d5bf4bfd2d3c0b"
 
   url "https://github.com/gum798/Glimble/releases/download/v#{version}/Glimble-#{version}.dmg"
   name "Glimble"
