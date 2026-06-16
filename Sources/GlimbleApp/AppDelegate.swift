@@ -2,8 +2,10 @@ import AppKit
 import CoreGraphics
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem!
+    private var countItem: NSMenuItem?
+    private var launchItem: NSMenuItem?
     private let touchSource = TouchSource()
     private let rules = RulesModel()
     private let recorder = Recorder()
@@ -42,18 +44,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func buildMenu() -> NSMenu {
         let menu = NSMenu()
-        let count = NSMenuItem(title: "Glimble (\(rules.ruleSet.rules.count) rules)",
-                               action: nil, keyEquivalent: "")
+        menu.delegate = self
+        let count = NSMenuItem(title: ruleCountTitle(), action: nil, keyEquivalent: "")
         count.isEnabled = false
         menu.addItem(count)
+        countItem = count
         menu.addItem(.separator())
         add(menu, "Settings…", #selector(openSettings), key: ",")
         add(menu, "Onboarding & Permissions…", #selector(openOnboarding), key: "")
         let launch = add(menu, "Open at Login", #selector(toggleLaunch), key: "")
         launch.state = LaunchAtLogin.isEnabled ? .on : .off
+        launchItem = launch
         menu.addItem(.separator())
         add(menu, "Quit Glimble", #selector(NSApplication.terminate(_:)), key: "q")
         return menu
+    }
+
+    private func ruleCountTitle() -> String { "Glimble (\(rules.ruleSet.rules.count) rules)" }
+
+    /// Refresh the live bits (rule count, login state) each time the menu opens.
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        countItem?.title = ruleCountTitle()
+        launchItem?.state = LaunchAtLogin.isEnabled ? .on : .off
     }
 
     @discardableResult
