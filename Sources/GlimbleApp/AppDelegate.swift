@@ -15,7 +15,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        statusItem.button?.title = "👆"
+        if let icon = NSImage(systemSymbolName: "hand.tap.fill", accessibilityDescription: "Glimble") {
+            icon.isTemplate = true   // single color, adapts to light/dark menu bar
+            statusItem.button?.image = icon
+        } else {
+            statusItem.button?.title = "Glimble"
+        }
         statusItem.menu = buildMenu()
 
         // First run (or missing grants) → guide the user through permissions.

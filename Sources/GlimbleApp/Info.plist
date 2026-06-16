@@ -11,5 +11,6 @@
     <key>LSUIElement</key>                 <true/>
     <key>LSMinimumSystemVersion</key>      <string>15.0</string>
     <key>NSPrincipalClass</key>            <string>NSApplication</string>
+    <key>CFBundleIconFile</key>            <string>Glimble</string>
 </dict>
 </plist>

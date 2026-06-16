@@ -32,6 +32,7 @@ rm -rf "${APP}"
 mkdir -p "${APP}/Contents/MacOS" "${APP}/Contents/Frameworks" "${APP}/Contents/Resources"
 cp "${BIN}" "${APP}/Contents/MacOS/GlimbleApp"
 cp Sources/GlimbleApp/Info.plist "${APP}/Contents/Info.plist"
+cp Resources/Glimble.icns "${APP}/Contents/Resources/Glimble.icns"
 
 # Embed the dynamic framework and drop dev-only headers/modules from the shipped copy.
 cp -R "${BUILD_DIR}/${FRAMEWORK}" "${APP}/Contents/Frameworks/${FRAMEWORK}"
