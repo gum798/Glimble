@@ -11,6 +11,7 @@ public struct RecognizerConfig: Sendable {
     public var longPressMin: TimeInterval = 0.5
     public var edgeThreshold: CGFloat = 0.06
     public var forceMinPressure: Float = 2.0    // hardware-dependent; tuned on-device later
+    public var drawMinPathLength: CGFloat = 0.25
     public init() {}
 }
 
@@ -31,6 +32,8 @@ public struct GestureRecognizer: Sendable {
     private var maxPressure: Float = 0
     private var startTimestamp: TimeInterval = 0
     private var lastTimestamp: TimeInterval = 0
+    private var path: [CGPoint] = []
+    private let shapes = ShapeRecognizer()
 
     public init(config: RecognizerConfig = RecognizerConfig()) {
         self.config = config
@@ -51,6 +54,7 @@ public struct GestureRecognizer: Sendable {
                 rotationDelta = 0
                 maxPressure = 0
                 startTimestamp = frame.timestamp
+                path = [frame.centroid]
             }
             return nil
         }
@@ -71,6 +75,7 @@ public struct GestureRecognizer: Sendable {
                 rotationDelta = 0
                 maxPressure = 0
                 startTimestamp = frame.timestamp
+                path = [frame.centroid]
             } else if touching == maxFingers {
                 // Measure displacement only while all fingers are down. Track the centroid at
                 // peak displacement so a swipe that partially returns keeps its true direction.
@@ -84,6 +89,7 @@ public struct GestureRecognizer: Sendable {
                 let rot = averageRotation(frame)
                 if abs(rot) > abs(rotationDelta) { rotationDelta = rot }
                 maxPressure = max(maxPressure, frame.fingers.map(\.pressure).max() ?? 0)
+                path.append(frame.centroid)
             }
             // touching < maxFingers: fingers are lifting; ignore (the centroid swing as fingers
             // leave is not movement either).
@@ -101,6 +107,13 @@ public struct GestureRecognizer: Sendable {
         }
         if abs(spreadDelta) >= config.pinchMinSpread {
             return .pinch(fingers: maxFingers, zoom: spreadDelta > 0 ? .zoomIn : .zoomOut)
+        }
+        // Shape match only a genuinely CURVY path: a straight swipe has pathLen ~= maxDisplacement
+        // and fails the 1.3x curvature gate, so it stays a swipe; a tap has a tiny path.
+        let pathLen = polylineLength(path)
+        if pathLen >= config.drawMinPathLength, pathLen > 1.3 * maxDisplacement,
+           let shape = shapes.recognize(path) {
+            return .draw(shape: shape)
         }
         if maxDisplacement >= config.swipeMinDistance {
             let dir = dominantDirection()
@@ -151,6 +164,14 @@ public struct GestureRecognizer: Sendable {
     private func distance(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
         let dx = a.x - b.x, dy = a.y - b.y
         return (dx * dx + dy * dy).squareRoot()
+    }
+
+    /// Total length of the polyline through `pts` (sum of consecutive segment lengths).
+    private func polylineLength(_ pts: [CGPoint]) -> CGFloat {
+        guard pts.count > 1 else { return 0 }
+        var total: CGFloat = 0
+        for i in 1..<pts.count { total += distance(pts[i - 1], pts[i]) }
+        return total
     }
 
     /// Average distance of the fingers from the centroid — grows on spread, shrinks on pinch.

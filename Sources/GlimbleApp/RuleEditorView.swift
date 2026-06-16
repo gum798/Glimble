@@ -635,6 +635,7 @@ private enum GestureGlyph {
         case .longPress: return "hand.point.up.left.fill"
         case .edgeSwipe: return "arrow.right.to.line"
         case .forceTouch: return "hand.point.up.left.fill"
+        case .draw: return "scribble.variable"
         case .swipe(_, let dir):
             switch dir {
             case .left: return "arrow.left"
@@ -657,6 +658,7 @@ private enum GestureGlyph {
         case .longPress(let f): return "\(fingerLabel(f)) · long press"
         case .edgeSwipe(let f, _): return "\(fingerLabel(f)) · edge swipe"
         case .forceTouch(let f): return "\(fingerLabel(f)) · force press"
+        case .draw(let s): return "drawn shape · \(s.rawValue)"
         }
     }
 

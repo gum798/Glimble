@@ -244,3 +244,40 @@ private func frame(_ n: Int, at center: CGPoint, t: TimeInterval) -> TouchFrame 
     _ = rec.process(light(0)); _ = rec.process(light(0.05))
     #expect(rec.process(TouchFrame(fingers: [], timestamp: 0.06)) == .tap(fingers: 3))
 }
+
+// MARK: - Drawn shapes
+
+/// A frame of 3 fingers clustered at `center` (a 0.01 jitter so they're not perfectly coincident).
+private func cluster3(at center: CGPoint, t: TimeInterval) -> TouchFrame {
+    let offsets = [CGPoint(x: -0.01, y: 0), CGPoint(x: 0.01, y: 0), CGPoint(x: 0, y: 0.01)]
+    let fingers = offsets.enumerated().map { i, o in
+        Finger(id: Int32(i), position: CGPoint(x: center.x + o.x, y: center.y + o.y), pressure: 0.6)
+    }
+    return TouchFrame(fingers: fingers, timestamp: t)
+}
+
+@Test func threeFingerCircleIsDrawCircle() {
+    var rec = GestureRecognizer()
+    let steps = 24
+    let radius: CGFloat = 0.2
+    let mid = CGPoint(x: 0.5, y: 0.5)
+    // Step a 3-finger cluster around a full circle; the centroid path traces the circle.
+    for i in 0...steps {
+        let a = 2 * Double.pi * Double(i) / Double(steps)
+        let c = CGPoint(x: mid.x + radius * CGFloat(cos(a)), y: mid.y + radius * CGFloat(sin(a)))
+        _ = rec.process(cluster3(at: c, t: 0.01 * Double(i)))
+    }
+    let result = rec.process(TouchFrame(fingers: [], timestamp: 0.01 * Double(steps + 1)))
+    #expect(result == .draw(shape: .circle))
+}
+
+@Test func straightSwipeIsStillSwipeNotDraw() {
+    // A straight 3-finger swipe has pathLen ~= maxDisplacement, so the 1.3x curvature gate
+    // rejects it as a draw and it stays a swipe.
+    var rec = GestureRecognizer()
+    _ = rec.process(frame(3, at: CGPoint(x: 0.2, y: 0.5), t: 0.00))
+    _ = rec.process(frame(3, at: CGPoint(x: 0.45, y: 0.5), t: 0.02))
+    _ = rec.process(frame(3, at: CGPoint(x: 0.7, y: 0.5), t: 0.04))
+    let result = rec.process(TouchFrame(fingers: [], timestamp: 0.06))
+    #expect(result == .swipe(fingers: 3, direction: .right))
+}

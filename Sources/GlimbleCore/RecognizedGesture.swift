@@ -32,4 +32,5 @@ public enum RecognizedGesture: Codable, Equatable, Sendable {
     case longPress(fingers: Int)
     case edgeSwipe(fingers: Int, edge: TrackpadEdge)
     case forceTouch(fingers: Int)
+    case draw(shape: DrawnShape)
 }

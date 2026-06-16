@@ -134,6 +134,7 @@ struct RulesTab: View {
         case .longPress: return "hand.point.up.left.fill"
         case .edgeSwipe: return "arrow.right.to.line"
         case .forceTouch: return "hand.point.up.left.fill"
+        case .draw: return "scribble.variable"
         case .swipe(_, let dir):
             switch dir {
             case .left: return "arrow.left"; case .right: return "arrow.right"

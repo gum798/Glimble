@@ -19,6 +19,8 @@ public extension RecognizedGesture {
             return "\(f)-finger edge swipe from \(e.rawValue)"
         case .forceTouch(let f):
             return "\(f)-finger force touch"
+        case .draw(let s):
+            return "draw " + s.rawValue
         }
     }
 }
