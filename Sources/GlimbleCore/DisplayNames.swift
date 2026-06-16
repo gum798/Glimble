@@ -24,6 +24,7 @@ public extension SnapPosition {
         case .bottomLeft: return "Snap bottom-left"; case .bottomRight: return "Snap bottom-right"
         case .maximize: return "Maximize window"; case .center: return "Center window"
         case .fill: return "Fill screen"
+        case .minimize: return "Minimize to Dock"
         }
     }
 }

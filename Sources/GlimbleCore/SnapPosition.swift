@@ -3,5 +3,5 @@
 public enum SnapPosition: String, Codable, CaseIterable, Sendable {
     case left, right, top, bottom
     case topLeft, topRight, bottomLeft, bottomRight
-    case maximize, center, fill
+    case maximize, center, fill, minimize
 }

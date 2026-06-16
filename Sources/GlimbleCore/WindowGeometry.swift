@@ -9,8 +9,8 @@ public enum WindowGeometry {
         let halfW = vf.width / 2
         let halfH = vf.height / 2
         switch position {
-        case .maximize, .fill:
-            return vf
+        case .maximize, .fill, .minimize:
+            return vf   // maximize/fill/minimize are handled natively in WindowSnapper, not by rect
         case .left:
             return CGRect(x: vf.minX, y: vf.minY, width: halfW, height: vf.height)
         case .right:

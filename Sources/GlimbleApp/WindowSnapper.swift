@@ -42,6 +42,12 @@ enum WindowSnapper {
             return
         }
 
+        // Minimize to the Dock — the native yellow-button action.
+        if position == .minimize {
+            try minimizeNatively(axWindow)
+            return
+        }
+
         let screen = NSScreen.main ?? NSScreen.screens.first!
         let vf = screen.visibleFrame
         let primaryHeight = (NSScreen.screens.first { $0.frame.origin == .zero } ?? screen).frame.height
@@ -60,6 +66,19 @@ enum WindowSnapper {
         try setSize(axWindow, &size)
         try setPosition(axWindow, &axPoint)
         try setSize(axWindow, &size)
+    }
+
+    /// Minimize to the Dock: press the native minimize (yellow) button, falling back to
+    /// setting the window's minimized attribute.
+    private static func minimizeNatively(_ window: AXUIElement) throws {
+        var buttonRef: CFTypeRef?
+        if AXUIElementCopyAttributeValue(window, kAXMinimizeButtonAttribute as CFString, &buttonRef) == .success,
+           let buttonRef {
+            let button = buttonRef as! AXUIElement
+            if AXUIElementPerformAction(button, kAXPressAction as CFString) == .success { return }
+        }
+        let err = AXUIElementSetAttributeValue(window, kAXMinimizedAttribute as CFString, kCFBooleanTrue)
+        if err != .success { throw WindowSnapError.axError(err) }
     }
 
     /// Press the window's native zoom (green) button — the OS-driven maximize/restore toggle.

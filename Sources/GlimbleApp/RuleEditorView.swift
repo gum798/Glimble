@@ -665,6 +665,7 @@ private enum SnapGlyph {
         case .maximize: return "arrow.up.left.and.arrow.down.right"
         case .center: return "rectangle.center.inset.filled"
         case .fill: return "rectangle.fill"
+        case .minimize: return "dock.arrow.down.rectangle"
         }
     }
 }
