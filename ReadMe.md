@@ -12,8 +12,11 @@ simple, with good defaults out of the box.
 
 ```sh
 brew tap gum798/glimble
+brew trust gum798/glimble        # Homebrew 5+ requires trusting third-party tap casks
 brew install --cask glimble
 ```
+
+Update later with `brew update && brew upgrade --cask glimble`.
 
 ### Manual
 

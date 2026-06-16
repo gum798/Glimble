@@ -43,6 +43,7 @@ caveat from the cask.)
 5. **Verify** end-to-end on a clean Mac:
    ```sh
    brew tap gum798/glimble
+   brew trust gum798/glimble        # Homebrew 5+ requires trusting third-party tap casks
    brew install --cask glimble
    xattr -dr com.apple.quarantine "/Applications/Glimble.app"
    open "/Applications/Glimble.app"
