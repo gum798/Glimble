@@ -233,14 +233,14 @@ private func frame(_ n: Int, at center: CGPoint, t: TimeInterval) -> TouchFrame 
 
 @Test func hardPressIsForceTouch() {
     var rec = GestureRecognizer()
-    func hard(_ t: TimeInterval) -> TouchFrame { TouchFrame(fingers: (0..<3).map { Finger(id: Int32($0), position: CGPoint(x: 0.5, y: 0.5), pressure: 3.0) }, timestamp: t) }
+    func hard(_ t: TimeInterval) -> TouchFrame { TouchFrame(fingers: (0..<3).map { Finger(id: Int32($0), position: CGPoint(x: 0.5, y: 0.5), pressure: 1000) }, timestamp: t) }
     _ = rec.process(hard(0)); _ = rec.process(hard(0.05))
     #expect(rec.process(TouchFrame(fingers: [], timestamp: 0.06)) == .forceTouch(fingers: 3))
 }
 
 @Test func lightPressStaysTap() {
     var rec = GestureRecognizer()
-    func light(_ t: TimeInterval) -> TouchFrame { TouchFrame(fingers: (0..<3).map { Finger(id: Int32($0), position: CGPoint(x: 0.5, y: 0.5), pressure: 0.5) }, timestamp: t) }
+    func light(_ t: TimeInterval) -> TouchFrame { TouchFrame(fingers: (0..<3).map { Finger(id: Int32($0), position: CGPoint(x: 0.5, y: 0.5), pressure: 200) }, timestamp: t) }
     _ = rec.process(light(0)); _ = rec.process(light(0.05))
     #expect(rec.process(TouchFrame(fingers: [], timestamp: 0.06)) == .tap(fingers: 3))
 }

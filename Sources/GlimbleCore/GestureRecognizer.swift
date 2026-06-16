@@ -10,7 +10,7 @@ public struct RecognizerConfig: Sendable {
     public var rotateMinAngle: CGFloat = 0.35   // radians (~20°)
     public var longPressMin: TimeInterval = 0.5
     public var edgeThreshold: CGFloat = 0.06
-    public var forceMinPressure: Float = 2.0    // hardware-dependent; tuned on-device later
+    public var forceMinPressure: Float = 700    // OMS pressure scale ~0–1800; normal touch peaks <~300, a deliberate force-press ~1800 (on-device calibrated)
     public var drawMinPathLength: CGFloat = 0.25
     public init() {}
 }
