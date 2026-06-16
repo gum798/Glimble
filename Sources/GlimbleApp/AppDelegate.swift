@@ -6,14 +6,15 @@ import CoreGraphics
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private let touchSource = TouchSource()
-    private let engine = GestureEngine()
+    private let rules = RulesModel()
+    private lazy var engine = GestureEngine(rules: rules)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.button?.title = "👆"
 
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Glimble (\(engine.store.ruleSet.rules.count) rules)",
+        menu.addItem(NSMenuItem(title: "Glimble (\(rules.ruleSet.rules.count) rules)",
                                 action: nil, keyEquivalent: ""))
         menu.addItem(.separator())
         let quit = NSMenuItem(title: "Quit Glimble",
