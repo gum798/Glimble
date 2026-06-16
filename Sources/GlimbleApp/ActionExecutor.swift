@@ -17,8 +17,8 @@ enum ActionExecutor {
             runProcess("/usr/bin/shortcuts", ["run", name])
         case .launchApp(let bundleID):
             launchApp(bundleID: bundleID)
-        case .window:
-            break   // implemented in Task 15
+        case .window(let position):
+            try? WindowSnapper.snapFocusedWindow(to: position)
         }
     }
 
