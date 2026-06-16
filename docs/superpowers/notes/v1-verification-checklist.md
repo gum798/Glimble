@@ -40,11 +40,13 @@ With both permissions granted:
       action. Verify it fires **only** when that app is frontmost, and the global rule for the
       same gesture fires elsewhere.
 
-## 6. Keyboard-shortcut action
-- [ ] (Optional, needs a rule with a shortcut — not in defaults.) If you add a `.keyboardShortcut`
-      rule via JSON or a future editor field, verify the keystroke is delivered to the focused app.
-      (v1 editor exposes window + shell actions; keyboard/AppleScript/Shortcuts/launch are in the
-      model + executor and reachable via the rules.json file.)
+## 6. All action types (editor)
+The editor's **Action** picker now exposes every type. Spot-check a couple:
+- [ ] Add a rule → action **Keyboard shortcut**, key code `48` (Tab) + ⌘ → in an app, perform the
+      gesture → ⌘-Tab-style keystroke is delivered to the focused app.
+- [ ] Add a rule → action **Launch app** (pick one) → gesture launches it.
+- [ ] Add a rule → action **Run shell command** (e.g. `say hi`) → gesture runs it.
+      (AppleScript / Run Shortcut work the same way.)
 
 ## 7. Launch at login
 - [ ] Menu-bar ▸ **Open at Login** → check it appears in System Settings ▸ General ▸ Login Items.
@@ -60,9 +62,7 @@ With both permissions granted:
 ---
 
 ## Known v1 limitations (by design — deferred to v1.x)
-- Editor UI exposes window + shell actions; the other action types (keyboard shortcut,
-  AppleScript, Shortcuts, launch app) exist in the model/executor and work from `rules.json`,
-  but need editor fields — a small follow-up.
+- Keyboard-shortcut rules take a numeric macOS virtual key code (no live key-capture UI yet).
 - No drawn-shape gestures, Force-Touch, pinch/rotate, or external trackpads yet (v1.x).
 - Ad-hoc signing → re-grant permissions after each update (a Developer ID upgrade removes this).
 
