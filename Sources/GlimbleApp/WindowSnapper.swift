@@ -14,6 +14,10 @@ enum WindowSnapError: Error {
 @MainActor
 enum WindowSnapper {
 
+    /// Margin left around screen edges (and between adjacent windows) when snapping,
+    /// matching the macOS Sequoia tiling feel rather than filling edge-to-edge.
+    static let windowGap: CGFloat = 8
+
     static func snapFocusedWindow(to position: SnapPosition) throws {
         guard let frontApp = NSWorkspace.shared.frontmostApplication else {
             throw WindowSnapError.noFrontmostApp
@@ -31,7 +35,7 @@ enum WindowSnapper {
         let vf = screen.visibleFrame
         let primaryHeight = (NSScreen.screens.first { $0.frame.origin == .zero } ?? screen).frame.height
 
-        let appKitRect = WindowGeometry.snapRect(position, in: vf)
+        let appKitRect = WindowGeometry.snapRect(position, in: vf, gap: windowGap)
         var axPoint = WindowGeometry.axOrigin(forAppKitRect: appKitRect, primaryHeight: primaryHeight)
         var size = appKitRect.size
 

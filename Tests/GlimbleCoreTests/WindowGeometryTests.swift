@@ -63,3 +63,22 @@ private let vf = CGRect(x: 0, y: 0, width: 1920, height: 1055)
     let origin = WindowGeometry.axOrigin(forAppKitRect: appKit, primaryHeight: 1080)
     #expect(origin == CGPoint(x: 960, y: 25))
 }
+
+// A gap insets every snapped window by `gap` on all sides — a margin around the screen
+// (like macOS Sequoia tiling) and a 2×gap channel between adjacent windows.
+
+@Test func maximizeWithGapLeavesAMargin() {
+    #expect(WindowGeometry.snapRect(.maximize, in: vf, gap: 10)
+            == CGRect(x: 10, y: 10, width: 1900, height: 1035))
+}
+
+@Test func leftHalfWithGapInsetsAllSides() {
+    #expect(WindowGeometry.snapRect(.left, in: vf, gap: 10)
+            == CGRect(x: 10, y: 10, width: 940, height: 1035))
+}
+
+@Test func gapZeroMatchesTheUngappedRect() {
+    #expect(WindowGeometry.snapRect(.maximize, in: vf, gap: 0) == vf)
+    #expect(WindowGeometry.snapRect(.right, in: vf, gap: 0)
+            == WindowGeometry.snapRect(.right, in: vf))
+}
