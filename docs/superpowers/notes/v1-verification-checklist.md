@@ -42,8 +42,8 @@ With both permissions granted:
 
 ## 6. All action types (editor)
 The editor's **Action** picker now exposes every type. Spot-check a couple:
-- [ ] Add a rule → action **Keyboard shortcut**, key code `48` (Tab) + ⌘ → in an app, perform the
-      gesture → ⌘-Tab-style keystroke is delivered to the focused app.
+- [ ] Add a rule → action **Keyboard shortcut** → click **Record Shortcut**, press e.g. **⌘⇧→**
+      → the field shows `⌘⇧→`. Save → perform the gesture → that keystroke is delivered.
 - [ ] Add a rule → action **Launch app** (pick one) → gesture launches it.
 - [ ] Add a rule → action **Run shell command** (e.g. `say hi`) → gesture runs it.
       (AppleScript / Run Shortcut work the same way.)
@@ -62,7 +62,6 @@ The editor's **Action** picker now exposes every type. Spot-check a couple:
 ---
 
 ## Known v1 limitations (by design — deferred to v1.x)
-- Keyboard-shortcut rules take a numeric macOS virtual key code (no live key-capture UI yet).
 - No drawn-shape gestures, Force-Touch, pinch/rotate, or external trackpads yet (v1.x).
 - Ad-hoc signing → re-grant permissions after each update (a Developer ID upgrade removes this).
 

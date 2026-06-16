@@ -13,11 +13,8 @@ struct RuleEditorView: View {
     @State private var trigger: RecognizedGesture?
     @State private var actionKind: ActionKind = .window
     @State private var snapPosition: SnapPosition = .maximize
-    @State private var keyCodeText = ""
-    @State private var modCommand = false
-    @State private var modOption = false
-    @State private var modControl = false
-    @State private var modShift = false
+    @State private var shortcutKeyCode: UInt16?
+    @State private var shortcutModifiers: [KeyModifier] = []
     @State private var textValue = ""           // shell / appleScript / runShortcut
     @State private var launchBundleID = ""
     @State private var scopeBundleID = ""        // "" = global
@@ -80,15 +77,7 @@ struct RuleEditorView: View {
                 ForEach(SnapPosition.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
         case .keyboardShortcut:
-            TextField("Key code", text: $keyCodeText)
-            Text("macOS virtual key code (123=←, 124=→, 125=↓, 126=↑, 36=Return, 49=Space)")
-                .font(.caption).foregroundStyle(.secondary)
-            HStack {
-                Toggle("⌘", isOn: $modCommand)
-                Toggle("⌥", isOn: $modOption)
-                Toggle("⌃", isOn: $modControl)
-                Toggle("⇧", isOn: $modShift)
-            }
+            ShortcutField(keyCode: $shortcutKeyCode, modifiers: $shortcutModifiers)
         case .shell:
             TextField("Command", text: $textValue)
         case .appleScript:
@@ -106,7 +95,7 @@ struct RuleEditorView: View {
     private var actionIsValid: Bool {
         switch actionKind {
         case .window: return true
-        case .keyboardShortcut: return UInt16(keyCodeText) != nil
+        case .keyboardShortcut: return shortcutKeyCode != nil
         case .shell, .appleScript, .runShortcut: return !textValue.isEmpty
         case .launchApp: return !launchBundleID.isEmpty
         }
@@ -142,11 +131,8 @@ struct RuleEditorView: View {
             actionKind = .window; snapPosition = pos
         case .keyboardShortcut(let combo):
             actionKind = .keyboardShortcut
-            keyCodeText = String(combo.keyCode)
-            modCommand = combo.modifiers.contains(.command)
-            modOption = combo.modifiers.contains(.option)
-            modControl = combo.modifiers.contains(.control)
-            modShift = combo.modifiers.contains(.shift)
+            shortcutKeyCode = combo.keyCode
+            shortcutModifiers = combo.modifiers
         case .shell(let c):
             actionKind = .shell; textValue = c
         case .appleScript(let s):
@@ -165,12 +151,7 @@ struct RuleEditorView: View {
         case .window:
             action = .window(snapPosition)
         case .keyboardShortcut:
-            var mods: [KeyModifier] = []
-            if modCommand { mods.append(.command) }
-            if modOption { mods.append(.option) }
-            if modControl { mods.append(.control) }
-            if modShift { mods.append(.shift) }
-            action = .keyboardShortcut(KeyCombo(keyCode: UInt16(keyCodeText) ?? 0, modifiers: mods))
+            action = .keyboardShortcut(KeyCombo(keyCode: shortcutKeyCode ?? 0, modifiers: shortcutModifiers))
         case .shell:
             action = .shell(textValue)
         case .appleScript:
