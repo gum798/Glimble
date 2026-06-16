@@ -63,7 +63,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         launch.state = LaunchAtLogin.isEnabled ? .on : .off
         launchItem = launch
         menu.addItem(.separator())
-        add(menu, "Quit Glimble", #selector(NSApplication.terminate(_:)), key: "q")
+        // Quit's target stays nil so it routes up the responder chain to NSApp.terminate.
+        // (Going through `add` would set target = self, and AppDelegate doesn't implement
+        // terminate(_:), so AppKit would auto-disable the item — that was the bug.)
+        menu.addItem(NSMenuItem(title: "Quit Glimble",
+                                action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         return menu
     }
 
