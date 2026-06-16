@@ -27,24 +27,22 @@ enum WindowSnapper {
         }
         let axWindow = windowRef as! AXUIElement
 
-        // Maximize goes "through the OS": press the native green zoom button so the app/OS
-        // decides the zoomed size (its standard state, with whatever margins it uses), rather
-        // than Glimble forcing the window to fill the visible frame.
+        // Maximize / minimize go "through the OS" via the native window buttons (green zoom /
+        // yellow minimize) so the app/OS decides the result.
         if position == .maximize {
             try zoomNatively(axWindow)
             return
         }
-
-        // Fill also goes "through the OS": press the app's native Window ▸ Fill menu item.
-        // If the app exposes no such item (non-AppKit menu, older app, disabled), fall through
-        // to the explicit frame fill below (snapRect(.fill) == visibleFrame).
-        if position == .fill, (try? NativeFill.fill(app: axApp)) != nil {
+        if position == .minimize {
+            try minimizeNatively(axWindow)
             return
         }
 
-        // Minimize to the Dock — the native yellow-button action.
-        if position == .minimize {
-            try minimizeNatively(axWindow)
+        // Halves / quarters / center / fill also go "through the OS": press the matching
+        // Window ▸ Move & Resize (or Fill) menu item so macOS performs the tiling with its own
+        // margins + multi-display rules. If the app exposes no such item (non-AppKit menu, older
+        // app, disabled), fall through to the explicit AX frame below.
+        if NativeTiling.tile(app: axApp, position: position) {
             return
         }
 
