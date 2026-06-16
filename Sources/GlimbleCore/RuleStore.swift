@@ -12,4 +12,19 @@ public struct RuleStore: Sendable {
         }
         return candidates.first(where: { $0.scope == .global })?.action
     }
+
+    public func write(to url: URL) throws {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try encoder.encode(ruleSet).write(to: url, options: .atomic)
+    }
+
+    public static func load(from url: URL) throws -> RuleStore {
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            return RuleStore(ruleSet: RuleSet(version: 1, rules: []))
+        }
+        let data = try Data(contentsOf: url)
+        let ruleSet = try JSONDecoder().decode(RuleSet.self, from: data)
+        return RuleStore(ruleSet: ruleSet)
+    }
 }

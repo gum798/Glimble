@@ -33,3 +33,23 @@ private func rule(_ scope: RuleScope, _ trigger: RecognizedGesture, _ action: Gl
     ]))
     #expect(store.action(for: .tap(fingers: 2), frontmostBundleID: nil) == nil)
 }
+
+@Test func ruleStoreWritesAndLoadsFromDisk() throws {
+    let url = FileManager.default.temporaryDirectory
+        .appendingPathComponent("glimble-test-\(UUID().uuidString).json")
+    defer { try? FileManager.default.removeItem(at: url) }
+    let original = RuleStore(ruleSet: RuleSet(rules: [
+        rule(.global, .tap(fingers: 3), .shell("echo hi")),
+    ]))
+    try original.write(to: url)
+    let loaded = try RuleStore.load(from: url)
+    #expect(loaded.ruleSet == original.ruleSet)
+}
+
+@Test func loadingMissingFileReturnsEmptyRuleSet() throws {
+    let url = FileManager.default.temporaryDirectory
+        .appendingPathComponent("glimble-missing-\(UUID().uuidString).json")
+    let store = try RuleStore.load(from: url)
+    #expect(store.ruleSet.rules.isEmpty)
+    #expect(store.ruleSet.version == 1)
+}
