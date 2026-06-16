@@ -5,13 +5,7 @@ public enum WindowGeometry {
 
     /// Target rect for `position` within `vf`, in the SAME coordinate space as `vf`
     /// (AppKit visible frame: bottom-left origin, y grows upward).
-    /// `gap` insets the result on all sides — a margin around the screen edges (and a 2×gap
-    /// channel between adjacent windows), matching the macOS Sequoia tiling feel.
-    public static func snapRect(_ position: SnapPosition, in vf: CGRect, gap: CGFloat = 0) -> CGRect {
-        base(position, in: vf).insetBy(dx: gap, dy: gap)
-    }
-
-    private static func base(_ position: SnapPosition, in vf: CGRect) -> CGRect {
+    public static func snapRect(_ position: SnapPosition, in vf: CGRect) -> CGRect {
         let halfW = vf.width / 2
         let halfH = vf.height / 2
         switch position {

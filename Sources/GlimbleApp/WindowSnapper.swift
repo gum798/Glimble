@@ -14,10 +14,6 @@ enum WindowSnapError: Error {
 @MainActor
 enum WindowSnapper {
 
-    /// Margin left around screen edges (and between adjacent windows) when snapping,
-    /// matching the macOS Sequoia tiling feel rather than filling edge-to-edge.
-    static let windowGap: CGFloat = 8
-
     static func snapFocusedWindow(to position: SnapPosition) throws {
         guard let frontApp = NSWorkspace.shared.frontmostApplication else {
             throw WindowSnapError.noFrontmostApp
@@ -31,11 +27,19 @@ enum WindowSnapper {
         }
         let axWindow = windowRef as! AXUIElement
 
+        // Maximize goes "through the OS": press the native green zoom button so the app/OS
+        // decides the zoomed size (its standard state, with whatever margins it uses), rather
+        // than Glimble forcing the window to fill the visible frame.
+        if position == .maximize {
+            try zoomNatively(axWindow)
+            return
+        }
+
         let screen = NSScreen.main ?? NSScreen.screens.first!
         let vf = screen.visibleFrame
         let primaryHeight = (NSScreen.screens.first { $0.frame.origin == .zero } ?? screen).frame.height
 
-        let appKitRect = WindowGeometry.snapRect(position, in: vf, gap: windowGap)
+        let appKitRect = WindowGeometry.snapRect(position, in: vf)
         var axPoint = WindowGeometry.axOrigin(forAppKitRect: appKitRect, primaryHeight: primaryHeight)
         var size = appKitRect.size
 
@@ -49,6 +53,16 @@ enum WindowSnapper {
         try setSize(axWindow, &size)
         try setPosition(axWindow, &axPoint)
         try setSize(axWindow, &size)
+    }
+
+    /// Press the window's native zoom (green) button — the OS-driven maximize/restore toggle.
+    private static func zoomNatively(_ window: AXUIElement) throws {
+        var buttonRef: CFTypeRef?
+        let err = AXUIElementCopyAttributeValue(window, kAXZoomButtonAttribute as CFString, &buttonRef)
+        guard err == .success, let buttonRef else { throw WindowSnapError.axError(err) }
+        let button = buttonRef as! AXUIElement
+        let pressErr = AXUIElementPerformAction(button, kAXPressAction as CFString)
+        if pressErr != .success { throw WindowSnapError.axError(pressErr) }
     }
 
     private static func setPosition(_ window: AXUIElement, _ point: inout CGPoint) throws {
