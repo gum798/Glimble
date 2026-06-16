@@ -5,7 +5,7 @@ import CoreGraphics
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
-    private let touchReader = TouchReader()
+    private let touchSource = TouchSource()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -37,14 +37,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let opts = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(opts)
 
-        touchReader.onCount = { [weak self] count in
-            self?.statusItem.button?.title = "👆 \(count)"
+        touchSource.onFrame = { [weak self] frame in
+            self?.statusItem.button?.title = "👆 \(frame.fingerCount)"
         }
-        touchReader.start()
+        touchSource.start()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        touchReader.stop()
+        touchSource.stop()
     }
 
     @objc private func snapLeft()  { try? WindowSnapper.snapFocusedWindow(to: .left) }
