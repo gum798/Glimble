@@ -78,3 +78,15 @@ private func frame(_ n: Int, at center: CGPoint, t: TimeInterval) -> TouchFrame 
     _ = rec.process(frame(3, at: c, t: 1.0))
     #expect(rec.process(TouchFrame(fingers: [], timestamp: 1.02)) == .tap(fingers: 3))
 }
+
+@Test func swipeAndReturnKeepsPeakDirection() {
+    // Swipe right to the peak, then partially return left before lifting.
+    // Net displacement at lift (x=0.45) is slightly LEFT of start (x=0.5), but the gesture
+    // is clearly a rightward swipe — direction must come from the peak (x=0.9), not the lift.
+    var rec = GestureRecognizer()
+    _ = rec.process(frame(3, at: CGPoint(x: 0.5, y: 0.5), t: 0.00))
+    _ = rec.process(frame(3, at: CGPoint(x: 0.9, y: 0.5), t: 0.02))   // peak: +0.4 right
+    _ = rec.process(frame(3, at: CGPoint(x: 0.45, y: 0.5), t: 0.04))  // returns: net -0.05
+    let result = rec.process(TouchFrame(fingers: [], timestamp: 0.06))
+    #expect(result == .swipe(fingers: 3, direction: .right))
+}

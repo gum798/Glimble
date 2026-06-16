@@ -16,7 +16,7 @@ public struct GestureRecognizer: Sendable {
     private var active = false
     private var maxFingers = 0
     private var startCentroid: CGPoint = .zero
-    private var lastCentroid: CGPoint = .zero
+    private var peakCentroid: CGPoint = .zero   // centroid at the point of max displacement
     private var maxDisplacement: CGFloat = 0
 
     public init(config: RecognizerConfig = RecognizerConfig()) {
@@ -30,15 +30,20 @@ public struct GestureRecognizer: Sendable {
                 active = true
                 maxFingers = touching
                 startCentroid = frame.centroid
-                lastCentroid = frame.centroid
+                peakCentroid = frame.centroid
                 maxDisplacement = 0
             }
             return nil
         }
         if touching > 0 {
             maxFingers = max(maxFingers, touching)
-            lastCentroid = frame.centroid
-            maxDisplacement = max(maxDisplacement, distance(frame.centroid, startCentroid))
+            // Track the centroid at peak displacement so a swipe that partially returns
+            // before lifting keeps its true direction (see dominantDirection()).
+            let d = distance(frame.centroid, startCentroid)
+            if d > maxDisplacement {
+                maxDisplacement = d
+                peakCentroid = frame.centroid
+            }
             return nil
         }
         let result = classify()
@@ -57,10 +62,11 @@ public struct GestureRecognizer: Sendable {
         return nil
     }
 
-    /// Direction of net travel from session start to last touching frame. y is up.
+    /// Direction of travel from session start to the point of MAX displacement (not the lift
+    /// point), so a swipe that partially returns before lifting keeps its true direction. y is up.
     private func dominantDirection() -> SwipeDirection {
-        let dx = lastCentroid.x - startCentroid.x
-        let dy = lastCentroid.y - startCentroid.y
+        let dx = peakCentroid.x - startCentroid.x
+        let dy = peakCentroid.y - startCentroid.y
         if abs(dx) >= abs(dy) {
             return dx >= 0 ? .right : .left
         } else {
@@ -69,6 +75,8 @@ public struct GestureRecognizer: Sendable {
     }
 
     private mutating func reset() {
+        // start/peak centroids are intentionally not cleared here: they are only read while
+        // `active`, and `process` overwrites both when the next session begins.
         active = false
         maxFingers = 0
         maxDisplacement = 0

@@ -18,6 +18,9 @@ final class TouchSource {
         manager.startListening()
         task = Task { [weak self] in
             guard let self else { return }
+            // The OMS stream coalesces to the newest frame under back-pressure, so intermediate
+            // frames can be dropped. The recognizer tolerates this by tracking max/peak rather
+            // than integrating per-frame — keep `onFrame`/`engine.handle` cheap so frames flow.
             for await touches in self.manager.touchDataStream {
                 let frame = Self.normalize(touches, sequence: self.nextTimestamp())
                 self.onFrame?(frame)
