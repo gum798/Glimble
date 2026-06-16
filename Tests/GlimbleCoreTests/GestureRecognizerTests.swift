@@ -90,3 +90,31 @@ private func frame(_ n: Int, at center: CGPoint, t: TimeInterval) -> TouchFrame 
     let result = rec.process(TouchFrame(fingers: [], timestamp: 0.06))
     #expect(result == .swipe(fingers: 3, direction: .right))
 }
+
+// Real hardware: fingers of a multi-finger tap land/lift one at a time, so the centroid
+// swings DURING landing/lifting even though the user never "moves". That swing must NOT be
+// counted as gesture movement, or taps get misread as swipes. (Regression: 3/4-finger tap.)
+
+@Test func tapWithSpreadFingersLandingSequentiallyIsTap() {
+    var rec = GestureRecognizer()
+    let f0 = Finger(id: 0, position: CGPoint(x: 0.30, y: 0.5), pressure: 0.6)
+    let f1 = Finger(id: 1, position: CGPoint(x: 0.50, y: 0.5), pressure: 0.6)
+    let f2 = Finger(id: 2, position: CGPoint(x: 0.70, y: 0.5), pressure: 0.6)
+    _ = rec.process(TouchFrame(fingers: [f0], timestamp: 0.00))             // 1 finger, centroid 0.30
+    _ = rec.process(TouchFrame(fingers: [f0, f1], timestamp: 0.01))         // 2 fingers, centroid 0.40
+    _ = rec.process(TouchFrame(fingers: [f0, f1, f2], timestamp: 0.02))     // 3 fingers, centroid 0.50
+    _ = rec.process(TouchFrame(fingers: [f0, f1, f2], timestamp: 0.03))     // held
+    let result = rec.process(TouchFrame(fingers: [], timestamp: 0.05))      // lift
+    #expect(result == .tap(fingers: 3))
+}
+
+@Test func tapWithSpreadFingersLiftingSequentiallyIsTap() {
+    var rec = GestureRecognizer()
+    let f0 = Finger(id: 0, position: CGPoint(x: 0.30, y: 0.5), pressure: 0.6)
+    let f1 = Finger(id: 1, position: CGPoint(x: 0.70, y: 0.5), pressure: 0.6)
+    _ = rec.process(TouchFrame(fingers: [f0, f1], timestamp: 0.00))   // 2 fingers, centroid 0.50
+    _ = rec.process(TouchFrame(fingers: [f0, f1], timestamp: 0.01))   // held
+    _ = rec.process(TouchFrame(fingers: [f0], timestamp: 0.02))       // f1 lifts → centroid 0.30 (ignore)
+    let result = rec.process(TouchFrame(fingers: [], timestamp: 0.03))
+    #expect(result == .tap(fingers: 2))
+}

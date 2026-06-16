@@ -36,14 +36,26 @@ public struct GestureRecognizer: Sendable {
             return nil
         }
         if touching > 0 {
-            maxFingers = max(maxFingers, touching)
-            // Track the centroid at peak displacement so a swipe that partially returns
-            // before lifting keeps its true direction (see dominantDirection()).
-            let d = distance(frame.centroid, startCentroid)
-            if d > maxDisplacement {
-                maxDisplacement = d
+            if touching > maxFingers {
+                // A new finger landed. Re-baseline so displacement measures only real movement
+                // once the FULL finger count is down — the centroid shifts a lot as spread
+                // fingers land one at a time, and that is not gesture movement (it would
+                // otherwise misread a multi-finger tap as a swipe).
+                maxFingers = touching
+                startCentroid = frame.centroid
                 peakCentroid = frame.centroid
+                maxDisplacement = 0
+            } else if touching == maxFingers {
+                // Measure displacement only while all fingers are down. Track the centroid at
+                // peak displacement so a swipe that partially returns keeps its true direction.
+                let d = distance(frame.centroid, startCentroid)
+                if d > maxDisplacement {
+                    maxDisplacement = d
+                    peakCentroid = frame.centroid
+                }
             }
+            // touching < maxFingers: fingers are lifting; ignore (the centroid swing as fingers
+            // leave is not movement either).
             return nil
         }
         let result = classify()
