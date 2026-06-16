@@ -35,6 +35,13 @@ enum WindowSnapper {
             return
         }
 
+        // Fill also goes "through the OS": press the app's native Window ▸ Fill menu item.
+        // If the app exposes no such item (non-AppKit menu, older app, disabled), fall through
+        // to the explicit frame fill below (snapRect(.fill) == visibleFrame).
+        if position == .fill, (try? NativeFill.fill(app: axApp)) != nil {
+            return
+        }
+
         let screen = NSScreen.main ?? NSScreen.screens.first!
         let vf = screen.visibleFrame
         let primaryHeight = (NSScreen.screens.first { $0.frame.origin == .zero } ?? screen).frame.height
