@@ -26,16 +26,16 @@ enum NativeTiling {
     /// Returns nil for positions handled by window buttons (maximize/minimize).
     private static func spec(for position: SnapPosition) -> TileSpec? {
         switch position {
-        case .left:        return TileSpec(titles: ["Left", "왼쪽"], arrowKey: 123)        // ←
-        case .right:       return TileSpec(titles: ["Right", "오른쪽"], arrowKey: 124)      // →
-        case .top:         return TileSpec(titles: ["Top", "위쪽"], arrowKey: 126)         // ↑
-        case .bottom:      return TileSpec(titles: ["Bottom", "아래쪽"], arrowKey: 125)     // ↓
-        case .topLeft:     return TileSpec(titles: ["Top Left", "왼쪽 위"], arrowKey: nil)
-        case .topRight:    return TileSpec(titles: ["Top Right", "오른쪽 위"], arrowKey: nil)
-        case .bottomLeft:  return TileSpec(titles: ["Bottom Left", "왼쪽 아래"], arrowKey: nil)
-        case .bottomRight: return TileSpec(titles: ["Bottom Right", "오른쪽 아래"], arrowKey: nil)
-        case .center:      return TileSpec(titles: ["Center", "가운데"], arrowKey: nil)
-        case .fill:        return TileSpec(titles: ["Fill", "화면 채우기", "フィル", "Füllen",
+        case .left:        return TileSpec(titles: ["Left", "왼쪽"], arrowKey: 123)            // ←
+        case .right:       return TileSpec(titles: ["Right", "오른쪽"], arrowKey: 124)          // →
+        case .top:         return TileSpec(titles: ["Top", "상단", "위쪽"], arrowKey: 126)       // ↑
+        case .bottom:      return TileSpec(titles: ["Bottom", "하단", "아래쪽"], arrowKey: 125)   // ↓
+        case .topLeft:     return TileSpec(titles: ["Top Left", "왼쪽 상단", "왼쪽 위"], arrowKey: nil)
+        case .topRight:    return TileSpec(titles: ["Top Right", "오른쪽 상단", "오른쪽 위"], arrowKey: nil)
+        case .bottomLeft:  return TileSpec(titles: ["Bottom Left", "왼쪽 하단", "왼쪽 아래"], arrowKey: nil)
+        case .bottomRight: return TileSpec(titles: ["Bottom Right", "오른쪽 하단", "오른쪽 아래"], arrowKey: nil)
+        case .center:      return TileSpec(titles: ["Center", "중앙 정렬", "가운데"], arrowKey: nil)
+        case .fill:        return TileSpec(titles: ["Fill", "채우기", "화면 채우기", "フィル", "Füllen",
                                                     "Remplir", "Rellenar", "Riempi", "填充", "Preencher"],
                                            arrowKey: nil)
         case .maximize, .minimize: return nil
