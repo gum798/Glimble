@@ -6,8 +6,8 @@
 # Per release: bump `version` and replace `sha256` with the value printed by
 # scripts/release.sh (see docs/RELEASING.md).
 cask "glimble" do
-  version "0.1.3"
-  sha256 "211c40bfacc61524f7f5c50776cffd60954afb64e5f467dd960094a5eb59167c"
+  version "0.1.4"
+  sha256 "42fc996d686848a46a257660693731f87bcc719d89eb7e05eff52f05be4d0cf9"
 
   url "https://github.com/gum798/Glimble/releases/download/v#{version}/Glimble-#{version}.dmg"
   name "Glimble"
